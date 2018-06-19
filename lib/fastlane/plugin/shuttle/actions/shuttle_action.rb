@@ -6,6 +6,7 @@ module Fastlane
     class ShuttleAction < Action
       def self.run(params)
         UI.message("The shuttle plugin is working!")
+        UI.message("Uploading file #{params.values[:package_path]}…")
       end
 
       def self.description
@@ -27,11 +28,11 @@ module Fastlane
 
       def self.available_options
         [
-          # FastlaneCore::ConfigItem.new(key: :your_option,
-          #                         env_name: "SHUTTLE_YOUR_OPTION",
-          #                      description: "A description of your option",
-          #                         optional: false,
-          #                             type: String)
+          FastlaneCore::ConfigItem.new(key: :package_path,
+                                  env_name: "SHUTTLE_PACKAGE_PATH",
+                               description: "The path to the new app you want to upload to Shuttle",
+                                  optional: false,
+                                      type: String)
         ]
       end
 
