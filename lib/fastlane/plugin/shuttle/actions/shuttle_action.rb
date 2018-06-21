@@ -3,6 +3,7 @@ require_relative '../helper/shuttle_helper'
 require 'faraday'
 require 'json'
 require 'app-info'
+require 'terminal-table'
 
 module Fastlane
   module Actions
@@ -137,6 +138,35 @@ module Fastlane
         end
 
         UI.important("App id #{app_id} - release name: #{release_name}")
+        rows = [
+          'Shuttle Base URL', 
+          'Shuttle app name', 
+          'Shuttle env name', 
+          'Package path', 
+          'Platform', 
+          'Package Id',
+          'Release name',
+          'Release version',
+          'Build version',
+          'Release notes',
+          'Commit hash'
+        ].zip([
+            params[:base_url], 
+            app["attributes"]["name"], 
+            environment["attributes"]["name"], 
+            package_path, 
+            package_platform_id, 
+            package_id,
+            release_name,
+            release_version,
+            build_version,
+            params[:release_notes],
+            commit_id
+        ])
+        table = Terminal::Table.new :rows => rows, :title => "Summary for Shuttle upload".green
+        puts
+        puts table
+        puts
 
         build = self.upload_build(params, package_path, app_id)
         build_id = build["id"]
