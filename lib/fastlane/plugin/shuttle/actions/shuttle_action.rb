@@ -54,6 +54,14 @@ module Fastlane
         return data["data"]
       end
 
+      def self.zipAppsWithEnvironments(params, environments)
+        apps = environments.map do |env| 
+          self.get_app(params, env["relationships"]["app"]["data"]["id"])
+        end
+
+        apps.zip(environments)
+      end
+
       def self.upload_build(params, package_path, app_id)
         connection = self.connection(params, '/builds', true)
         res = connection.post do |req|
@@ -113,23 +121,48 @@ module Fastlane
 
         environments = self.get_environments(params)
 
+        app = nil
         app_id = ""
         env_id = ""
         environment = nil
-        for env in environments do
-          if env["attributes"]["package_id"] == package_id
+        environments.select do |env|
+          env["attributes"]["package_id"] == package_id
+        end
+        
+        UI.abort_with_message!("No environments configured for package id #{package_id}") if environments.empty?
+
+        if environments.count == 1 
+            env = environments[0]
             env_id = env["id"]
             app_id = env["relationships"]["app"]["data"]["id"]
+            environment = env
+            app = self.get_app(params, app_id)
+        else
+          UI.abort_with_message!("Too many environments with package id #{package_id}") unless UI.interactive?
+          appsWithEnvironments = self.zipAppsWithEnvironments(params, environments)
+          options = appsWithEnvironments.map do |appWithEnv|
+            app = appWithEnv[0]
+            env = appWithEnv[1]
+            "#{app["attributes"]["name"]} (#{env["attributes"]["name"]})"
+          end
+          abort_options = "None match, abort"
+          user_choice = UI.select "Can't guess which app and environment to use, please choose the correct one:", options << abort_options
+          case user_choice
+          when abort_options
+            UI.user_error!("Aborting…")
+          else
+            choice_index = options.find_index(user_choice)
+            appWithEnv = appsWithEnvironments[choice_index]
+            app = appWithEnv[0]
+            env = appWithEnv[1]
+            env_id = env["id"]
+            app_id = app["id"]
             environment = env
           end
         end
 
-        if app_id.empty?
-          UI.error("No environments configured for package id #{package_id}")
-          return 
-        end
-
-        app = self.get_app(params, app_id)
+        
+        
         release_name = self.get_release_name(params, app, environment, release_version, build_version)
 
         if app["attributes"]["platform_id"] != package_platform_id 
@@ -137,7 +170,6 @@ module Fastlane
           return 
         end
 
-        UI.important("App id #{app_id} - release name: #{release_name}")
         rows = [
           'Shuttle Base URL', 
           'Shuttle app name', 
