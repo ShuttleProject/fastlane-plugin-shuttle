@@ -99,7 +99,10 @@ module Fastlane
       end
 
       def self.run(params)
-        package_path = params[:package_path]
+        package_path = params[:package_path] unless params[:package_path].to_s.empty?
+        package_path = lane_context[SharedValues::IPA_OUTPUT_PATH] if package_path.to_s.empty?
+        package_path = lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH] if package_path.to_s.empty?
+        UI.abort_with_message!("No Package file found") if package_path.to_s.empty?
         UI.abort_with_message!("Package at path #{package_path} does not exist") unless File.exist?(package_path)
 
         package_platform_id, package_id, release_version, build_version = self.app_info(package_path)
@@ -162,8 +165,8 @@ module Fastlane
         [
           FastlaneCore::ConfigItem.new(key: :package_path,
                                   env_name: "SHUTTLE_PACKAGE_PATH",
-                               description: "The path to the new app you want to upload to Shuttle",
-                                  optional: false,
+                               description: "The path to the new app you want to upload to Shuttle (check in shared values GRADLE_APK_OUTPUT_PATH or IPA_OUTPUT_PATH if not present)",
+                                  optional: true,
                                       type: String),
           FastlaneCore::ConfigItem.new(key: :base_url,
                                   env_name: "SHUTTLE_BASE_URL",
