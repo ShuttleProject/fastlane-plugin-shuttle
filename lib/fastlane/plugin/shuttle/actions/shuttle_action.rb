@@ -123,13 +123,11 @@ module Fastlane
         UI.abort_with_message!("Package at path #{package_path} does not exist") unless File.exist?(package_path)
 
         package_info = self.app_info(package_path)
-        package_platform_id = package_info.platform_id
-        package_id = package_info.id
         release_version = package_info.release_version
         build_version = package_info.build_version
         commit_id = Helper.backticks("git show --format='%H' --quiet").chomp
         
-        UI.message("Uploading #{package_platform_id} package #{package_path} with ID #{package_id}…")
+        UI.message("Uploading #{package_info.platform_id} package #{package_path} with ID #{package_info.id}…")
 
         environments = self.get_environments(shuttle_instance)
 
@@ -138,10 +136,10 @@ module Fastlane
         env_id = ""
         environment = nil
         environments.select do |env|
-          env["attributes"]["package_id"] == package_id
+          env["attributes"]["package_id"] == package_info.id
         end
         
-        UI.abort_with_message!("No environments configured for package id #{package_id}") if environments.empty?
+        UI.abort_with_message!("No environments configured for package id #{package_info.id}") if environments.empty?
 
         if environments.count == 1 
             env = environments[0]
@@ -150,7 +148,7 @@ module Fastlane
             environment = env
             app = self.get_app(shuttle_instance, app_id)
         else
-          UI.abort_with_message!("Too many environments with package id #{package_id}") unless UI.interactive?
+          UI.abort_with_message!("Too many environments with package id #{package_info.id}") unless UI.interactive?
           appsWithEnvironments = self.zipAppsWithEnvironments(shuttle_instance, environments)
           options = appsWithEnvironments.map do |appWithEnv|
             app = appWithEnv[0]
@@ -177,8 +175,8 @@ module Fastlane
         
         release_name = self.get_release_name(params, app, environment, release_version, build_version)
 
-        if app["attributes"]["platform_id"] != package_platform_id 
-          UI.error("No apps configured for #{package_platform_id} with package id #{package_id}")
+        if app["attributes"]["platform_id"] != package_info.platform_id 
+          UI.error("No apps configured for #{package_info.platform_id} with package id #{package_info.id}")
           return 
         end
 
@@ -199,8 +197,8 @@ module Fastlane
             app["attributes"]["name"],
             environment["attributes"]["name"], 
             package_path, 
-            package_platform_id, 
-            package_id,
+            package_info.platform_id, 
+            package_info.id,
             release_name,
             release_version,
             build_version,
