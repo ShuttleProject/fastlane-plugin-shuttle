@@ -8,6 +8,7 @@ require 'terminal-table'
 ShuttleInstance = Struct.new(:base_url, :access_token)
 ShuttleApp = Struct.new(:id, :name, :platform_id)
 ShuttleEnvironment = Struct.new(:id, :name, :package_id, :app_id, :versioning_id)
+AppEnvironment = Struct.new(:shuttle_app, :shuttle_environment)
 PackageInfo = Struct.new(:id, :path, :platform_id, :release_version, :build_version)
 
 module Fastlane
@@ -83,12 +84,17 @@ module Fastlane
         )
       end
 
-      def self.zipAppsWithEnvironments(shuttle_instance, environments)
+      def self.get_app_environments(shuttle_instance, environments)
         apps = environments.map do |env| 
           self.get_app(shuttle_instance, env.app_id)
         end
 
-        apps.zip(environments)
+        apps.zip(environments).map do |app_env| 
+          AppEnvironment.new(
+            app_env[0],
+            app_env[1]
+          )
+        end
       end
 
       def self.upload_build(shuttle_instance, package_info, app_id)
@@ -163,10 +169,10 @@ module Fastlane
             app = self.get_app(shuttle_instance, app_id)
         else
           UI.abort_with_message!("Too many environments with package id #{package_info.id}") unless UI.interactive?
-          appsWithEnvironments = self.zipAppsWithEnvironments(shuttle_instance, environments)
-          options = appsWithEnvironments.map do |appWithEnv|
-            app = appWithEnv[0]
-            env = appWithEnv[1]
+          app_environments = self.get_app_environments(shuttle_instance, environments)
+          options = app_environments.map do |app_env|
+            app = app_env.shuttle_app
+            env = app_env.shuttle_environment
             "#{app.name} (#{env.name})"
           end
           abort_options = "None match, abort"
@@ -176,9 +182,9 @@ module Fastlane
             UI.user_error!("Aborting…")
           else
             choice_index = options.find_index(user_choice)
-            appWithEnv = appsWithEnvironments[choice_index]
-            app = appWithEnv[0]
-            env = appWithEnv[1]
+            app_env = app_environments[choice_index]
+            app = app_env.shuttle_app
+            env = app_env.shuttle_environment
             env_id = env.id
             app_id = app.id
             environment = env
