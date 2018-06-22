@@ -97,49 +97,51 @@ module Fastlane
         end
       end
 
-      def self.upload_build(shuttle_instance, package_info, app_id)
-        connection = self.connection(shuttle_instance, '/builds', true)
+      def self.post(shuttle_instance:, endpoint:, body:, is_multipart: false, debug: false)
+        connection = self.connection(shuttle_instance, endpoint, is_multipart)
         res = connection.post do |req|
-          req.body = {
-            "build[app_id]": app_id,
-            "build[package]": Faraday::UploadIO.new(package_info.path, 'application/octet-stream')
-          }
+          req.body = body
         end
         data = JSON.parse res.body
-        # UI.message(JSON.pretty_generate(data))
-        ShuttleBuild.new(data["data"]["id"])
+        UI.message(JSON.pretty_generate(data)) if debug == true
+        data["data"]
+      end
+
+      def self.upload_build(shuttle_instance, package_info, app_id)
+        body = {
+          "build[app_id]": app_id,
+          "build[package]": Faraday::UploadIO.new(package_info.path, 'application/octet-stream')
+        }
+        json_build = self.post(shuttle_instance: shuttle_instance, endpoint: '/builds', body: body, is_multipart: true)
+        ShuttleBuild.new(json_build["id"])
       end
 
       def self.create_release(shuttle_instance, release)
-        connection = self.connection(shuttle_instance, "/releases")
-        res = connection.post do |req|
-          req.body = JSON.generate({
-            data: {
-              type: "releases",
-              attributes: {
-                title: release.name,
-                notes: release.notes,
-                commit_id: release.commit_id
+        body = JSON.generate({
+          data: {
+            type: "releases",
+            attributes: {
+              title: release.name,
+              notes: release.notes,
+              commit_id: release.commit_id
+            },
+            relationships: {
+              build: {
+                data: {
+                  id: release.build.id,
+                  type: "builds"
+                }
               },
-              relationships: {
-                build: {
-                  data: {
-                    id: release.build.id,
-                    type: "builds"
-                  }
-                },
-                environment: {
-                  data: {
-                    id: release.environment.id,
-                    type: "environments"
-                  }
+              environment: {
+                data: {
+                  id: release.environment.id,
+                  type: "environments"
                 }
               }
             }
-          })
-        end
-        data = JSON.parse res.body
-        # UI.message(JSON.pretty_generate(data))
+          }
+        })
+        json_release = self.post(shuttle_instance: shuttle_instance, endpoint: "/releases", body: body)
       end
 
       def self.print_summary_table(shuttle_instance, app_environment, package_info, release)
