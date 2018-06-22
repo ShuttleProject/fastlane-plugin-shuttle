@@ -195,7 +195,7 @@ module Fastlane
             params[:release_notes],
             commit_id
         ])
-        table = Terminal::Table.new :rows => rows, :title => "Summary for Shuttle upload".green
+        table = Terminal::Table.new :rows => rows, :title => "Shuttle upload info summary".green
         puts
         puts table
         puts
