@@ -181,10 +181,7 @@ module Fastlane
         
         release_name = self.get_release_name(params, app_environment, package_info)
 
-        if app_environment.shuttle_app.platform_id != package_info.platform_id 
-          UI.error("No apps configured for #{package_info.platform_id} with package id #{package_info.id}")
-          return 
-        end
+        UI.abort_with_message!("No apps configured for #{package_info.platform_id} with package id #{package_info.id}") if app_environment.shuttle_app.platform_id != package_info.platform_id 
 
         rows = [
           'Shuttle Base URL', 
