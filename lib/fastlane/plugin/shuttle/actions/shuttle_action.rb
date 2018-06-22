@@ -150,6 +150,38 @@ module Fastlane
         # UI.message(JSON.pretty_generate(data))
       end
 
+      def self.print_summary_table(shuttle_instance, app_environment, package_info, release)
+        rows = [
+          'Shuttle Base URL', 
+          'Shuttle app name', 
+          'Shuttle env name', 
+          'Package path', 
+          'Platform', 
+          'Package Id',
+          'Release name',
+          'Release version',
+          'Build version',
+          'Release notes',
+          'Commit hash'
+        ].zip([
+            shuttle_instance.base_url, 
+            app_environment.shuttle_app.name,
+            app_environment.shuttle_environment.name, 
+            package_info.path, 
+            package_info.platform_id, 
+            package_info.id,
+            release.name,
+            package_info.release_version,
+            package_info.build_version,
+            release.notes,
+            release.commit_id
+        ])
+        table = Terminal::Table.new :rows => rows, :title => "Shuttle upload info summary".green
+        puts
+        puts table
+        puts
+      end
+
       def self.run(params)
         shuttle_instance = self.get_shuttle_instance(params)
         package_info = self.get_app_info(params)
@@ -190,35 +222,7 @@ module Fastlane
 
         UI.abort_with_message!("No apps configured for #{package_info.platform_id} with package id #{package_info.id}") if app_environment.shuttle_app.platform_id != package_info.platform_id 
 
-        rows = [
-          'Shuttle Base URL', 
-          'Shuttle app name', 
-          'Shuttle env name', 
-          'Package path', 
-          'Platform', 
-          'Package Id',
-          'Release name',
-          'Release version',
-          'Build version',
-          'Release notes',
-          'Commit hash'
-        ].zip([
-            shuttle_instance.base_url, 
-            app_environment.shuttle_app.name,
-            app_environment.shuttle_environment.name, 
-            package_info.path, 
-            package_info.platform_id, 
-            package_info.id,
-            release.name,
-            package_info.release_version,
-            package_info.build_version,
-            release.notes,
-            release.commit_id
-        ])
-        table = Terminal::Table.new :rows => rows, :title => "Shuttle upload info summary".green
-        puts
-        puts table
-        puts
+        self.print_summary_table(shuttle_instance, app_environment, package_info, release)
 
         release.build = self.upload_build(shuttle_instance, package_info, app_environment.shuttle_app.id)
 
