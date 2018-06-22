@@ -30,10 +30,10 @@ module Fastlane
         PackageInfo.new(app_info.identifier, package_path, app_info.os.downcase, app_info.release_version, app_info.build_version)
       end
 
-      def self.get_release_name(params, app, environment, package_info)
+      def self.get_release_name(params, app_environment, package_info)
         return params[:release_name] unless params[:release_name].to_s.empty?
-        release_name = "#{app.name} v#{package_info.release_version}"
-        if environment.versioning_id == "version_and_build"
+        release_name = "#{app_environment.shuttle_app.name} v#{package_info.release_version}"
+        if app_environment.shuttle_environment.versioning_id == "version_and_build"
           return "#{release_name}-#{package_info.build_version}"
         end 
         return release_name
@@ -151,10 +151,7 @@ module Fastlane
 
         environments = self.get_environments(shuttle_instance)
 
-        app = nil
-        app_id = ""
-        env_id = ""
-        environment = nil
+        app_environment = nil
         environments.select do |env|
           env.package_id == package_info.id
         end
@@ -163,17 +160,13 @@ module Fastlane
 
         if environments.count == 1 
             env = environments[0]
-            env_id = env.id
-            app_id = env.app_id
-            environment = env
-            app = self.get_app(shuttle_instance, app_id)
+            app = self.get_app(shuttle_instance, env.app_id)
+            app_environment = AppEnvironment.new(app, env)
         else
           UI.abort_with_message!("Too many environments with package id #{package_info.id}") unless UI.interactive?
           app_environments = self.get_app_environments(shuttle_instance, environments)
           options = app_environments.map do |app_env|
-            app = app_env.shuttle_app
-            env = app_env.shuttle_environment
-            "#{app.name} (#{env.name})"
+            "#{app_env.shuttle_app.name} (#{app_env.shuttle_environment.name})"
           end
           abort_options = "None match, abort"
           user_choice = UI.select "Can't guess which app and environment to use, please choose the correct one:", options << abort_options
@@ -182,20 +175,13 @@ module Fastlane
             UI.user_error!("Aborting…")
           else
             choice_index = options.find_index(user_choice)
-            app_env = app_environments[choice_index]
-            app = app_env.shuttle_app
-            env = app_env.shuttle_environment
-            env_id = env.id
-            app_id = app.id
-            environment = env
+            app_environment = app_environments[choice_index]
           end
         end
-
         
-        
-        release_name = self.get_release_name(params, app, environment, package_info)
+        release_name = self.get_release_name(params, app_environment, package_info)
 
-        if app.platform_id != package_info.platform_id 
+        if app_environment.shuttle_app.platform_id != package_info.platform_id 
           UI.error("No apps configured for #{package_info.platform_id} with package id #{package_info.id}")
           return 
         end
@@ -214,8 +200,8 @@ module Fastlane
           'Commit hash'
         ].zip([
             shuttle_instance.base_url, 
-            app.name,
-            environment.name, 
+            app_environment.shuttle_app.name,
+            app_environment.shuttle_environment.name, 
             package_info.path, 
             package_info.platform_id, 
             package_info.id,
@@ -230,10 +216,10 @@ module Fastlane
         puts table
         puts
 
-        build = self.upload_build(shuttle_instance, package_info, app_id)
+        build = self.upload_build(shuttle_instance, package_info, app_environment.shuttle_app.id)
         build_id = build["id"]
 
-        self.create_release(params, shuttle_instance, build_id, env_id, commit_id, release_name)
+        self.create_release(params, shuttle_instance, build_id, app_environment.shuttle_environment.id, commit_id, release_name)
       end
 
       def self.description
