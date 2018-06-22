@@ -55,10 +55,16 @@ module Fastlane
 
       def self.get(shuttle_instance, endpoint, debug=false) 
         connection = self.connection(shuttle_instance, endpoint)
-        res = connection.get()
-        data = JSON.parse(res.body)
-        UI.message("Debug: #{JSON.pretty_generate(data["data"])}\n") if debug == true
-        data["data"]
+        response = connection.get()
+        case response.status
+        when 200...300
+          data = JSON.parse(response.body)
+          UI.message("Debug: #{JSON.pretty_generate(data["data"])}\n") if debug == true
+          data["data"]
+        else 
+          UI.abort_with_message!("Error #{response.status.to_s} occured while calling endpoint #{endpoint}")
+          nil
+        end
       end
 
       def self.get_environments(shuttle_instance)
@@ -99,12 +105,18 @@ module Fastlane
 
       def self.post(shuttle_instance:, endpoint:, body:, is_multipart: false, debug: false)
         connection = self.connection(shuttle_instance, endpoint, is_multipart)
-        res = connection.post do |req|
+        response = connection.post do |req|
           req.body = body
         end
-        data = JSON.parse res.body
-        UI.message(JSON.pretty_generate(data)) if debug == true
-        data["data"]
+        case response.status
+        when 200...300
+          data = JSON.parse response.body
+          UI.message(JSON.pretty_generate(data)) if debug == true
+          data["data"]
+        else
+          UI.abort_with_message!("Error #{response.status.to_s} occured while calling endpoint #{endpoint} with body #{body}")
+          nil
+        end
       end
 
       def self.upload_build(shuttle_instance, package_info, app_id)
