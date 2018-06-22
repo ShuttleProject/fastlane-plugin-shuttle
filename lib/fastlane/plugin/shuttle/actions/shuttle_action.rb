@@ -8,6 +8,7 @@ require 'terminal-table'
 ShuttleInstance = Struct.new(:base_url, :access_token)
 ShuttleApp = Struct.new(:id, :name, :platform_id)
 ShuttleEnvironment = Struct.new(:id, :name, :package_id, :app_id, :versioning_id)
+ShuttleBuild = Struct.new(:id)
 AppEnvironment = Struct.new(:shuttle_app, :shuttle_environment)
 PackageInfo = Struct.new(:id, :path, :platform_id, :release_version, :build_version)
 
@@ -107,10 +108,10 @@ module Fastlane
         end
         data = JSON.parse res.body
         # UI.message(JSON.pretty_generate(data))
-        return data["data"]
+        ShuttleBuild.new(data["data"]["id"])
       end
 
-      def self.create_release(params, shuttle_instance, build_id, env_id, commit_id, release_name)
+      def self.create_release(params, shuttle_instance, build, env_id, commit_id, release_name)
         connection = self.connection(shuttle_instance, "/releases")
         res = connection.post do |req|
           req.body = JSON.generate({
@@ -124,7 +125,7 @@ module Fastlane
               relationships: {
                 build: {
                   data: {
-                    id: build_id,
+                    id: build.id,
                     type: "builds"
                   }
                 },
@@ -214,9 +215,8 @@ module Fastlane
         puts
 
         build = self.upload_build(shuttle_instance, package_info, app_environment.shuttle_app.id)
-        build_id = build["id"]
 
-        self.create_release(params, shuttle_instance, build_id, app_environment.shuttle_environment.id, commit_id, release_name)
+        self.create_release(params, shuttle_instance, build, app_environment.shuttle_environment.id, commit_id, release_name)
       end
 
       def self.description
