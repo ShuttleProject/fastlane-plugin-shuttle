@@ -5,9 +5,17 @@ require 'json'
 require 'app-info'
 require 'terminal-table'
 
+ShuttleInstance = Struct.new(:base_url, :access_token)
+
 module Fastlane
   module Actions
     class ShuttleAction < Action
+      def self.get_shuttle_instance(params) 
+        shuttle_base_url = params[:base_url]
+        shuttle_access_token = params[:access_token]
+        ShuttleInstance.new(shuttle_base_url, shuttle_access_token)
+      end
+
       def self.app_info(package_path)
         app_info = ::AppInfo.parse(package_path)
         return app_info.os.downcase, app_info.identifier, app_info.release_version, app_info.build_version
@@ -22,12 +30,10 @@ module Fastlane
         return release_name
       end
 
-      def self.connection(params, endpoint, is_multipart = false)
-        shuttle_base_url = params[:base_url]
-        shuttle_access_token = params[:access_token]
-        return Faraday.new(url: "#{shuttle_base_url}/api#{endpoint}") do |builder|
+      def self.connection(shuttle_instance, endpoint, is_multipart = false)
+        return Faraday.new(url: "#{shuttle_instance.base_url}/api#{endpoint}") do |builder|
           # builder.response :logger, Logger.new(STDOUT), bodies: true
-          builder.headers["Authorization"] = "Bearer #{shuttle_access_token}"
+          builder.headers["Authorization"] = "Bearer #{shuttle_instance.access_token}"
           builder.headers["Accept"] = "application/vnd.api+json"
           if is_multipart
             builder.request :multipart
@@ -38,32 +44,32 @@ module Fastlane
         end
       end
 
-      def self.get_environments(params)
-        connection = self.connection(params, '/environments')
+      def self.get_environments(shuttle_instance)
+        connection = self.connection(shuttle_instance, '/environments')
         res = connection.get()
         data = JSON.parse(res.body)
         # UI.message("Debug: #{JSON.pretty_generate(data["data"][0])}\n")
         return data["data"]
       end
 
-      def self.get_app(params, app_id)
-        connection = self.connection(params, "/apps/#{app_id}")
+      def self.get_app(shuttle_instance, app_id)
+        connection = self.connection(shuttle_instance, "/apps/#{app_id}")
         res = connection.get()
         data = JSON.parse(res.body)
         # UI.message("Debug: #{JSON.pretty_generate(data["data"])}\n")
         return data["data"]
       end
 
-      def self.zipAppsWithEnvironments(params, environments)
+      def self.zipAppsWithEnvironments(shuttle_instance, environments)
         apps = environments.map do |env| 
-          self.get_app(params, env["relationships"]["app"]["data"]["id"])
+          self.get_app(shuttle_instance, env["relationships"]["app"]["data"]["id"])
         end
 
         apps.zip(environments)
       end
 
-      def self.upload_build(params, package_path, app_id)
-        connection = self.connection(params, '/builds', true)
+      def self.upload_build(shuttle_instance, package_path, app_id)
+        connection = self.connection(shuttle_instance, '/builds', true)
         res = connection.post do |req|
           req.body = {
             "build[app_id]": app_id,
@@ -75,8 +81,8 @@ module Fastlane
         return data["data"]
       end
 
-      def self.create_release(params, build_id, env_id, commit_id, release_name)
-        connection = self.connection(params, "/releases")
+      def self.create_release(params, shuttle_instance, build_id, env_id, commit_id, release_name)
+        connection = self.connection(shuttle_instance, "/releases")
         res = connection.post do |req|
           req.body = JSON.generate({
             data: {
@@ -108,6 +114,7 @@ module Fastlane
       end
 
       def self.run(params)
+        shuttle_instance = self.get_shuttle_instance(params)
         package_path = params[:package_path] unless params[:package_path].to_s.empty?
         package_path = lane_context[SharedValues::IPA_OUTPUT_PATH] if package_path.to_s.empty?
         package_path = lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH] if package_path.to_s.empty?
@@ -119,7 +126,7 @@ module Fastlane
         
         UI.message("Uploading #{package_platform_id} package #{package_path} with ID #{package_id}…")
 
-        environments = self.get_environments(params)
+        environments = self.get_environments(shuttle_instance)
 
         app = nil
         app_id = ""
@@ -136,10 +143,10 @@ module Fastlane
             env_id = env["id"]
             app_id = env["relationships"]["app"]["data"]["id"]
             environment = env
-            app = self.get_app(params, app_id)
+            app = self.get_app(shuttle_instance, app_id)
         else
           UI.abort_with_message!("Too many environments with package id #{package_id}") unless UI.interactive?
-          appsWithEnvironments = self.zipAppsWithEnvironments(params, environments)
+          appsWithEnvironments = self.zipAppsWithEnvironments(shuttle_instance, environments)
           options = appsWithEnvironments.map do |appWithEnv|
             app = appWithEnv[0]
             env = appWithEnv[1]
@@ -183,7 +190,7 @@ module Fastlane
           'Release notes',
           'Commit hash'
         ].zip([
-            params[:base_url], 
+            shuttle_instance.base_url, 
             app["attributes"]["name"], 
             environment["attributes"]["name"], 
             package_path, 
@@ -200,10 +207,10 @@ module Fastlane
         puts table
         puts
 
-        build = self.upload_build(params, package_path, app_id)
+        build = self.upload_build(shuttle_instance, package_path, app_id)
         build_id = build["id"]
 
-        self.create_release(params, build_id, env_id, commit_id, release_name)
+        self.create_release(params, shuttle_instance, build_id, env_id, commit_id, release_name)
       end
 
       def self.description
