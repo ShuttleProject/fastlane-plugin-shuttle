@@ -53,12 +53,16 @@ module Fastlane
         end
       end
 
-      def self.get_environments(shuttle_instance)
-        connection = self.connection(shuttle_instance, '/environments')
+      def self.get(shuttle_instance, endpoint, debug=false) 
+        connection = self.connection(shuttle_instance, endpoint)
         res = connection.get()
         data = JSON.parse(res.body)
-        # UI.message("Debug: #{JSON.pretty_generate(data["data"])}\n")
-        data["data"].map do |env|
+        UI.message("Debug: #{JSON.pretty_generate(data["data"])}\n") if debug == true
+        data["data"]
+      end
+
+      def self.get_environments(shuttle_instance)
+        self.get(shuttle_instance, '/environments').map do |env|
           attrb = env["attributes"]
           ShuttleEnvironment.new(
             env["id"],
@@ -71,11 +75,7 @@ module Fastlane
       end
 
       def self.get_app(shuttle_instance, app_id)
-        connection = self.connection(shuttle_instance, "/apps/#{app_id}")
-        res = connection.get()
-        data = JSON.parse(res.body)
-        # UI.message("Debug: #{JSON.pretty_generate(data["data"])}\n")
-        json_app = data["data"]
+        json_app = self.get(shuttle_instance, "/apps/#{app_id}")
         json_app_attrb = json_app["attributes"]
         ShuttleApp.new(
           json_app["id"],
