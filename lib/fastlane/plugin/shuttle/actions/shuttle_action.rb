@@ -22,11 +22,11 @@ module Fastlane
         PackageInfo.new(app_info.identifier, package_path, app_info.os.downcase, app_info.release_version, app_info.build_version)
       end
 
-      def self.get_release_name(params, app, environment, release_version, build_version)
+      def self.get_release_name(params, app, environment, package_info)
         return params[:release_name] unless params[:release_name].to_s.empty?
-        release_name = "#{app["attributes"]["name"]} v#{release_version}"
+        release_name = "#{app["attributes"]["name"]} v#{package_info.release_version}"
         if environment["attributes"]["versioning_id"] == "version_and_build"
-          return "#{release_name}-#{build_version}"
+          return "#{release_name}-#{package_info.build_version}"
         end 
         return release_name
       end
@@ -123,8 +123,6 @@ module Fastlane
         UI.abort_with_message!("Package at path #{package_path} does not exist") unless File.exist?(package_path)
 
         package_info = self.app_info(package_path)
-        release_version = package_info.release_version
-        build_version = package_info.build_version
         commit_id = Helper.backticks("git show --format='%H' --quiet").chomp
         
         UI.message("Uploading #{package_info.platform_id} package #{package_path} with ID #{package_info.id}…")
@@ -173,7 +171,7 @@ module Fastlane
 
         
         
-        release_name = self.get_release_name(params, app, environment, release_version, build_version)
+        release_name = self.get_release_name(params, app, environment, package_info)
 
         if app["attributes"]["platform_id"] != package_info.platform_id 
           UI.error("No apps configured for #{package_info.platform_id} with package id #{package_info.id}")
@@ -200,8 +198,8 @@ module Fastlane
             package_info.platform_id, 
             package_info.id,
             release_name,
-            release_version,
-            build_version,
+            package_info.release_version,
+            package_info.build_version,
             params[:release_notes],
             commit_id
         ])
