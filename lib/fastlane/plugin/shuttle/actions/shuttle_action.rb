@@ -6,6 +6,7 @@ require 'app-info'
 require 'terminal-table'
 
 ShuttleInstance = Struct.new(:base_url, :access_token)
+PackageInfo = Struct.new(:id, :package_path, :platform_id, :release_version, :build_version)
 
 module Fastlane
   module Actions
@@ -18,7 +19,7 @@ module Fastlane
 
       def self.app_info(package_path)
         app_info = ::AppInfo.parse(package_path)
-        return app_info.os.downcase, app_info.identifier, app_info.release_version, app_info.build_version
+        PackageInfo.new(app_info.identifier, package_path, app_info.os.downcase, app_info.release_version, app_info.build_version)
       end
 
       def self.get_release_name(params, app, environment, release_version, build_version)
@@ -121,7 +122,11 @@ module Fastlane
         UI.abort_with_message!("No Package file found") if package_path.to_s.empty?
         UI.abort_with_message!("Package at path #{package_path} does not exist") unless File.exist?(package_path)
 
-        package_platform_id, package_id, release_version, build_version = self.app_info(package_path)
+        package_info = self.app_info(package_path)
+        package_platform_id = package_info.platform_id
+        package_id = package_info.id
+        release_version = package_info.release_version
+        build_version = package_info.build_version
         commit_id = Helper.backticks("git show --format='%H' --quiet").chomp
         
         UI.message("Uploading #{package_platform_id} package #{package_path} with ID #{package_id}…")
@@ -191,7 +196,7 @@ module Fastlane
           'Commit hash'
         ].zip([
             shuttle_instance.base_url, 
-            app["attributes"]["name"], 
+            app["attributes"]["name"],
             environment["attributes"]["name"], 
             package_path, 
             package_platform_id, 
