@@ -6,7 +6,7 @@ require 'app-info'
 require 'terminal-table'
 
 ShuttleInstance = Struct.new(:base_url, :access_token)
-PackageInfo = Struct.new(:id, :package_path, :platform_id, :release_version, :build_version)
+PackageInfo = Struct.new(:id, :path, :platform_id, :release_version, :build_version)
 
 module Fastlane
   module Actions
@@ -17,7 +17,12 @@ module Fastlane
         ShuttleInstance.new(shuttle_base_url, shuttle_access_token)
       end
 
-      def self.app_info(package_path)
+      def self.get_app_info(params)
+        package_path = params[:package_path] unless params[:package_path].to_s.empty?
+        package_path = lane_context[SharedValues::IPA_OUTPUT_PATH] if package_path.to_s.empty?
+        package_path = lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH] if package_path.to_s.empty?
+        UI.abort_with_message!("No Package file found") if package_path.to_s.empty?
+        UI.abort_with_message!("Package at path #{package_path} does not exist") unless File.exist?(package_path)
         app_info = ::AppInfo.parse(package_path)
         PackageInfo.new(app_info.identifier, package_path, app_info.os.downcase, app_info.release_version, app_info.build_version)
       end
@@ -69,12 +74,12 @@ module Fastlane
         apps.zip(environments)
       end
 
-      def self.upload_build(shuttle_instance, package_path, app_id)
+      def self.upload_build(shuttle_instance, package_info, app_id)
         connection = self.connection(shuttle_instance, '/builds', true)
         res = connection.post do |req|
           req.body = {
             "build[app_id]": app_id,
-            "build[package]": Faraday::UploadIO.new(package_path, 'application/octet-stream')
+            "build[package]": Faraday::UploadIO.new(package_info.path, 'application/octet-stream')
           }
         end
         data = JSON.parse res.body
@@ -116,16 +121,10 @@ module Fastlane
 
       def self.run(params)
         shuttle_instance = self.get_shuttle_instance(params)
-        package_path = params[:package_path] unless params[:package_path].to_s.empty?
-        package_path = lane_context[SharedValues::IPA_OUTPUT_PATH] if package_path.to_s.empty?
-        package_path = lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH] if package_path.to_s.empty?
-        UI.abort_with_message!("No Package file found") if package_path.to_s.empty?
-        UI.abort_with_message!("Package at path #{package_path} does not exist") unless File.exist?(package_path)
-
-        package_info = self.app_info(package_path)
+        package_info = self.get_app_info(params)
         commit_id = Helper.backticks("git show --format='%H' --quiet").chomp
         
-        UI.message("Uploading #{package_info.platform_id} package #{package_path} with ID #{package_info.id}…")
+        UI.message("Uploading #{package_info.platform_id} package #{package_info.path} with ID #{package_info.id}…")
 
         environments = self.get_environments(shuttle_instance)
 
@@ -194,7 +193,7 @@ module Fastlane
             shuttle_instance.base_url, 
             app["attributes"]["name"],
             environment["attributes"]["name"], 
-            package_path, 
+            package_info.path, 
             package_info.platform_id, 
             package_info.id,
             release_name,
@@ -208,7 +207,7 @@ module Fastlane
         puts table
         puts
 
-        build = self.upload_build(shuttle_instance, package_path, app_id)
+        build = self.upload_build(shuttle_instance, package_info, app_id)
         build_id = build["id"]
 
         self.create_release(params, shuttle_instance, build_id, env_id, commit_id, release_name)
