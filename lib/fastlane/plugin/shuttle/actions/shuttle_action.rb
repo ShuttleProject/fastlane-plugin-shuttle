@@ -11,6 +11,7 @@ ShuttleEnvironment = Struct.new(:id, :name, :package_id, :app_id, :versioning_id
 ShuttleBuild = Struct.new(:id)
 AppEnvironment = Struct.new(:shuttle_app, :shuttle_environment)
 PackageInfo = Struct.new(:id, :path, :platform_id, :release_version, :build_version)
+ReleaseInfo = Struct.new(:name, :notes, :build, :environment, :commit_id)
 
 module Fastlane
   module Actions
@@ -38,6 +39,12 @@ module Fastlane
           return "#{release_name}-#{package_info.build_version}"
         end 
         return release_name
+      end
+
+      def self.get_release_info(params, app_environment, package_info) 
+        release_name = self.get_release_name(params, app_environment, package_info)
+        commit_id = Helper.backticks("git show --format='%H' --quiet").chomp
+        ReleaseInfo.new(release_name, params[:release_notes], nil, app_environment.shuttle_environment, commit_id)
       end
 
       def self.connection(shuttle_instance, endpoint, is_multipart = false)
@@ -111,27 +118,27 @@ module Fastlane
         ShuttleBuild.new(data["data"]["id"])
       end
 
-      def self.create_release(params, shuttle_instance, build, env_id, commit_id, release_name)
+      def self.create_release(shuttle_instance, release)
         connection = self.connection(shuttle_instance, "/releases")
         res = connection.post do |req|
           req.body = JSON.generate({
             data: {
               type: "releases",
               attributes: {
-                title: release_name,
-                notes: params[:release_notes],
-                commit_id: commit_id
+                title: release.name,
+                notes: release.notes,
+                commit_id: release.commit_id
               },
               relationships: {
                 build: {
                   data: {
-                    id: build.id,
+                    id: release.build.id,
                     type: "builds"
                   }
                 },
                 environment: {
                   data: {
-                    id: env_id,
+                    id: release.environment.id,
                     type: "environments"
                   }
                 }
@@ -146,7 +153,6 @@ module Fastlane
       def self.run(params)
         shuttle_instance = self.get_shuttle_instance(params)
         package_info = self.get_app_info(params)
-        commit_id = Helper.backticks("git show --format='%H' --quiet").chomp
         
         UI.message("Uploading #{package_info.platform_id} package #{package_info.path} with ID #{package_info.id}…")
 
@@ -180,7 +186,7 @@ module Fastlane
           end
         end
         
-        release_name = self.get_release_name(params, app_environment, package_info)
+        release = self.get_release_info(params, app_environment, package_info)
 
         UI.abort_with_message!("No apps configured for #{package_info.platform_id} with package id #{package_info.id}") if app_environment.shuttle_app.platform_id != package_info.platform_id 
 
@@ -203,20 +209,20 @@ module Fastlane
             package_info.path, 
             package_info.platform_id, 
             package_info.id,
-            release_name,
+            release.name,
             package_info.release_version,
             package_info.build_version,
-            params[:release_notes],
-            commit_id
+            release.notes,
+            release.commit_id
         ])
         table = Terminal::Table.new :rows => rows, :title => "Shuttle upload info summary".green
         puts
         puts table
         puts
 
-        build = self.upload_build(shuttle_instance, package_info, app_environment.shuttle_app.id)
+        release.build = self.upload_build(shuttle_instance, package_info, app_environment.shuttle_app.id)
 
-        self.create_release(params, shuttle_instance, build, app_environment.shuttle_environment.id, commit_id, release_name)
+        self.create_release(shuttle_instance, release)
       end
 
       def self.description
