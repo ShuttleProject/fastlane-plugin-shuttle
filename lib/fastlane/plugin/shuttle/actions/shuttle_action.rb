@@ -6,6 +6,7 @@ require 'app-info'
 require 'terminal-table'
 
 ShuttleInstance = Struct.new(:base_url, :access_token)
+ShuttleApp = Struct.new(:id, :name, :platform_id)
 ShuttleEnvironment = Struct.new(:id, :name, :package_id, :app_id, :versioning_id)
 PackageInfo = Struct.new(:id, :path, :platform_id, :release_version, :build_version)
 
@@ -30,7 +31,7 @@ module Fastlane
 
       def self.get_release_name(params, app, environment, package_info)
         return params[:release_name] unless params[:release_name].to_s.empty?
-        release_name = "#{app["attributes"]["name"]} v#{package_info.release_version}"
+        release_name = "#{app.name} v#{package_info.release_version}"
         if environment.versioning_id == "version_and_build"
           return "#{release_name}-#{package_info.build_version}"
         end 
@@ -73,7 +74,13 @@ module Fastlane
         res = connection.get()
         data = JSON.parse(res.body)
         # UI.message("Debug: #{JSON.pretty_generate(data["data"])}\n")
-        return data["data"]
+        json_app = data["data"]
+        json_app_attrb = json_app["attributes"]
+        ShuttleApp.new(
+          json_app["id"],
+          json_app_attrb["name"],
+          json_app_attrb["platform_id"]
+        )
       end
 
       def self.zipAppsWithEnvironments(shuttle_instance, environments)
@@ -160,7 +167,7 @@ module Fastlane
           options = appsWithEnvironments.map do |appWithEnv|
             app = appWithEnv[0]
             env = appWithEnv[1]
-            "#{app["attributes"]["name"]} (#{env.name})"
+            "#{app.name} (#{env.name})"
           end
           abort_options = "None match, abort"
           user_choice = UI.select "Can't guess which app and environment to use, please choose the correct one:", options << abort_options
@@ -173,7 +180,7 @@ module Fastlane
             app = appWithEnv[0]
             env = appWithEnv[1]
             env_id = env.id
-            app_id = app["id"]
+            app_id = app.id
             environment = env
           end
         end
@@ -182,7 +189,7 @@ module Fastlane
         
         release_name = self.get_release_name(params, app, environment, package_info)
 
-        if app["attributes"]["platform_id"] != package_info.platform_id 
+        if app.platform_id != package_info.platform_id 
           UI.error("No apps configured for #{package_info.platform_id} with package id #{package_info.id}")
           return 
         end
@@ -201,7 +208,7 @@ module Fastlane
           'Commit hash'
         ].zip([
             shuttle_instance.base_url, 
-            app["attributes"]["name"],
+            app.name,
             environment.name, 
             package_info.path, 
             package_info.platform_id, 
