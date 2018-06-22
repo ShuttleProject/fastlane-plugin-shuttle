@@ -6,6 +6,7 @@ require 'app-info'
 require 'terminal-table'
 
 ShuttleInstance = Struct.new(:base_url, :access_token)
+ShuttleEnvironment = Struct.new(:id, :name, :package_id, :app_id, :versioning_id)
 PackageInfo = Struct.new(:id, :path, :platform_id, :release_version, :build_version)
 
 module Fastlane
@@ -30,7 +31,7 @@ module Fastlane
       def self.get_release_name(params, app, environment, package_info)
         return params[:release_name] unless params[:release_name].to_s.empty?
         release_name = "#{app["attributes"]["name"]} v#{package_info.release_version}"
-        if environment["attributes"]["versioning_id"] == "version_and_build"
+        if environment.versioning_id == "version_and_build"
           return "#{release_name}-#{package_info.build_version}"
         end 
         return release_name
@@ -54,8 +55,17 @@ module Fastlane
         connection = self.connection(shuttle_instance, '/environments')
         res = connection.get()
         data = JSON.parse(res.body)
-        # UI.message("Debug: #{JSON.pretty_generate(data["data"][0])}\n")
-        return data["data"]
+        # UI.message("Debug: #{JSON.pretty_generate(data["data"])}\n")
+        data["data"].map do |env|
+          attrb = env["attributes"]
+          ShuttleEnvironment.new(
+            env["id"],
+            attrb["name"],
+            attrb["package_id"],
+            env["relationships"]["app"]["data"]["id"],
+            attrb["versioning_id"]
+          )
+        end
       end
 
       def self.get_app(shuttle_instance, app_id)
@@ -68,7 +78,7 @@ module Fastlane
 
       def self.zipAppsWithEnvironments(shuttle_instance, environments)
         apps = environments.map do |env| 
-          self.get_app(shuttle_instance, env["relationships"]["app"]["data"]["id"])
+          self.get_app(shuttle_instance, env.app_id)
         end
 
         apps.zip(environments)
@@ -133,15 +143,15 @@ module Fastlane
         env_id = ""
         environment = nil
         environments.select do |env|
-          env["attributes"]["package_id"] == package_info.id
+          env.package_id == package_info.id
         end
         
         UI.abort_with_message!("No environments configured for package id #{package_info.id}") if environments.empty?
 
         if environments.count == 1 
             env = environments[0]
-            env_id = env["id"]
-            app_id = env["relationships"]["app"]["data"]["id"]
+            env_id = env.id
+            app_id = env.app_id
             environment = env
             app = self.get_app(shuttle_instance, app_id)
         else
@@ -150,7 +160,7 @@ module Fastlane
           options = appsWithEnvironments.map do |appWithEnv|
             app = appWithEnv[0]
             env = appWithEnv[1]
-            "#{app["attributes"]["name"]} (#{env["attributes"]["name"]})"
+            "#{app["attributes"]["name"]} (#{env.name})"
           end
           abort_options = "None match, abort"
           user_choice = UI.select "Can't guess which app and environment to use, please choose the correct one:", options << abort_options
@@ -162,7 +172,7 @@ module Fastlane
             appWithEnv = appsWithEnvironments[choice_index]
             app = appWithEnv[0]
             env = appWithEnv[1]
-            env_id = env["id"]
+            env_id = env.id
             app_id = app["id"]
             environment = env
           end
@@ -192,7 +202,7 @@ module Fastlane
         ].zip([
             shuttle_instance.base_url, 
             app["attributes"]["name"],
-            environment["attributes"]["name"], 
+            environment.name, 
             package_info.path, 
             package_info.platform_id, 
             package_info.id,
