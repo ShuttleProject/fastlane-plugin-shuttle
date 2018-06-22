@@ -17,12 +17,13 @@ module Fastlane
   module Actions
     class ShuttleAction < Action
       def self.run(params)
-        shuttle_instance = Helper::ShuttleHelper.get_shuttle_instance(params)
-        package_info = Helper::ShuttleHelper.get_app_info(params)
+        helper = Helper::ShuttleHelper
+        shuttle_instance = helper.get_shuttle_instance(params)
+        package_info = helper.get_app_info(params)
         
         UI.message("Uploading #{package_info.platform_id} package #{package_info.path} with ID #{package_info.id}…")
 
-        environments = Helper::ShuttleHelper.get_environments(shuttle_instance)
+        environments = helper.get_environments(shuttle_instance)
 
         app_environment = nil
         environments.select do |env|
@@ -33,11 +34,11 @@ module Fastlane
 
         if environments.count == 1 
             env = environments[0]
-            app = Helper::ShuttleHelper.get_app(shuttle_instance, env.app_id)
+            app = helper.get_app(shuttle_instance, env.app_id)
             app_environment = AppEnvironment.new(app, env)
         else
           UI.abort_with_message!("Too many environments with package id #{package_info.id}") unless UI.interactive?
-          app_environments = Helper::ShuttleHelper.get_app_environments(shuttle_instance, environments)
+          app_environments = helper.get_app_environments(shuttle_instance, environments)
           options = app_environments.map do |app_env|
             "#{app_env.shuttle_app.name} (#{app_env.shuttle_environment.name})"
           end
@@ -52,15 +53,15 @@ module Fastlane
           end
         end
         
-        release = Helper::ShuttleHelper.get_release_info(params, app_environment, package_info)
+        release = helper.get_release_info(params, app_environment, package_info)
 
         UI.abort_with_message!("No apps configured for #{package_info.platform_id} with package id #{package_info.id}") if app_environment.shuttle_app.platform_id != package_info.platform_id 
 
-        Helper::ShuttleHelper.print_summary_table(shuttle_instance, app_environment, package_info, release)
+        helper.print_summary_table(shuttle_instance, app_environment, package_info, release)
 
-        release.build = Helper::ShuttleHelper.upload_build(shuttle_instance, package_info, app_environment.shuttle_app.id)
+        release.build = helper.upload_build(shuttle_instance, package_info, app_environment.shuttle_app.id)
 
-        Helper::ShuttleHelper.create_release(shuttle_instance, release)
+        helper.create_release(shuttle_instance, release)
       end
 
       def self.description
