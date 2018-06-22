@@ -32,13 +32,16 @@ module Fastlane
         
         UI.abort_with_message!("No environments configured for package id #{package_info.id}") if environments.empty?
 
-        if environments.count == 1 
-            env = environments[0]
-            app = helper.get_app(shuttle_instance, env.app_id)
-            app_environment = AppEnvironment.new(app, env)
+        app_environments = helper.get_app_environments(shuttle_instance, environments).select do |app_env|
+          app_env.shuttle_app.platform_id == package_info.platform_id
+        end
+
+        UI.abort_with_message!("No apps configured for #{package_info.platform_id} with package id #{package_info.id}") if app_environments.empty?
+
+        if app_environments.count == 1 
+            app_environment = app_environments[0]
         else
-          UI.abort_with_message!("Too many environments with package id #{package_info.id}") unless UI.interactive?
-          app_environments = helper.get_app_environments(shuttle_instance, environments)
+          UI.abort_with_message!("Too many environments with package id #{package_info.id} for #{package_info.platform_id}") unless UI.interactive?
           options = app_environments.map do |app_env|
             "#{app_env.shuttle_app.name} (#{app_env.shuttle_environment.name})"
           end
@@ -54,8 +57,6 @@ module Fastlane
         end
         
         release = helper.get_release_info(params, app_environment, package_info)
-
-        UI.abort_with_message!("No apps configured for #{package_info.platform_id} with package id #{package_info.id}") if app_environment.shuttle_app.platform_id != package_info.platform_id 
 
         helper.print_summary_table(shuttle_instance, app_environment, package_info, release)
 
