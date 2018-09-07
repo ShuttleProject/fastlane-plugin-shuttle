@@ -67,16 +67,20 @@ module Fastlane
         end
       end
 
+      def self.environment_from_json(json_env)
+        attrb = json_env["attributes"]
+        ShuttleEnvironment.new(
+          json_env["id"],
+          attrb["name"],
+          attrb["package_id"],
+          json_env["relationships"]["app"]["data"]["id"],
+          attrb["versioning_id"]
+        )
+      end
+
       def self.get_environments(shuttle_instance)
-        self.get(shuttle_instance, '/environments').map do |env|
-          attrb = env["attributes"]
-          ShuttleEnvironment.new(
-            env["id"],
-            attrb["name"],
-            attrb["package_id"],
-            env["relationships"]["app"]["data"]["id"],
-            attrb["versioning_id"]
-          )
+        self.get(shuttle_instance, '/environments').map do |json_env|
+          self.environment_from_json(json_env)
         end
       end
 
