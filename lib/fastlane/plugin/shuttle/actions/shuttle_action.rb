@@ -1,5 +1,6 @@
 require 'fastlane/action'
 require_relative '../helper/shuttle_helper'
+require_relative '../helper/app_environment_selector'
 require 'faraday'
 require 'json'
 require 'app-info'
@@ -18,39 +19,13 @@ module Fastlane
     class ShuttleAction < Action
       def self.run(params)
         helper = Helper::ShuttleHelper
+        selector = Helper::AppEnvironmentSelector
         shuttle_instance = helper.get_shuttle_instance(params)
         package_info = helper.get_app_info(params)
         
         UI.message("Uploading #{package_info.platform_id} package #{package_info.path} with ID #{package_info.id}…")
 
-        environments = helper.get_environments(shuttle_instance)
-
-        app_environment = nil
-        environments.select do |env|
-          env.package_id == package_info.id
-        end
-        
-        UI.abort_with_message!("No environments configured for package id #{package_info.id}") if environments.empty?
-
-        app_environments = helper.get_app_environments(shuttle_instance, environments).select do |app_env|
-          app_env.shuttle_app.platform_id == package_info.platform_id
-        end
-
-        UI.abort_with_message!("No apps configured for #{package_info.platform_id} with package id #{package_info.id}") if app_environments.empty?
-
-        if app_environments.count == 1 
-            app_environment = app_environments[0]
-        else
-          options = app_environments.map do |app_env|
-            "#{app_env.shuttle_app.name} (#{app_env.shuttle_environment.name})"
-          end
-          choice_index = helper.promptChoices(
-              "Can't guess which app and environment to use, please choose the correct one:",
-              options, 
-              "Too many environments with package id #{package_info.id} for #{package_info.platform_id}"
-          )
-          app_environment = app_environments[choice_index]
-        end
+        app_environment = selector.get_app_environment(shuttle_instance, package_info)
         
         release = helper.get_release_info(params, app_environment, package_info)
 
