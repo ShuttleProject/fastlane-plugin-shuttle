@@ -19,38 +19,25 @@ module Fastlane
         end
         
         if environments.empty?
-          options = helper.get_apps(shuttle_instance).map do |app|
-            "#{app.name}"
-          end
-          create_new_option = "Create a new one…"
-          choice_index = helper.promptChoices(
-              "Can't guess which app and environment to use, please choose the correct one:",
-              options << create_new_option, 
-              "No environments configured for package id #{package_info.id}"
-          )
-          if choice_index < options.length
-            # we have our app
-          else
-            # we need to create one
-          end
-        end
-
-        app_environments = helper.get_app_environments(shuttle_instance, environments).select do |app_env|
-          app_env.shuttle_app.platform_id == package_info.platform_id
-        end
-
-        UI.abort_with_message!("No apps configured for #{package_info.platform_id} with package id #{package_info.id}") if app_environments.empty?
-
-        if app_environments.count == 1 
-          app_environment = app_environments[0]
+          app = self.get_app_interactive(shuttle_instance, package_info, helper)
         else
-          app_environment = self.desambiguateAppEnvironment(app_environments, package_info)
+          app_environments = helper.get_app_environments(shuttle_instance, environments).select do |app_env|
+            app_env.shuttle_app.platform_id == package_info.platform_id
+          end
+
+          UI.abort_with_message!("No apps configured for #{package_info.platform_id} with package id #{package_info.id}") if app_environments.empty?
+
+          if app_environments.count == 1 
+            app_environment = app_environments[0]
+          else
+            app_environment = self.desambiguateAppEnvironment(app_environments, package_info, helper)
+          end
         end
 
         return app_environment
       end
 
-      def desambiguateAppEnvironment(app_environments, package_info)
+      def self.desambiguateAppEnvironment(app_environments, package_info, helper)
         options = app_environments.map do |app_env|
           "#{app_env.shuttle_app.name} (#{app_env.shuttle_environment.name})"
         end
@@ -60,6 +47,33 @@ module Fastlane
             "Too many environments with package id #{package_info.id} for #{package_info.platform_id}"
         )
         app_environment = app_environments[choice_index]
+      end
+
+      def self.get_app_interactive(shuttle_instance, package_info, helper)
+        apps = helper.get_apps(shuttle_instance)
+        options = apps.map do |app|
+          "#{app.name}"
+        end
+        create_new_option = "Create a new one…"
+        choice_index = helper.promptChoices(
+            "Can't guess which app and environment to use, please choose the correct one:",
+            options << create_new_option, 
+            "No environments configured for package id #{package_info.id}"
+        )
+        case options[choice_index]
+        when create_new_option
+          app = self.create_app_interactive(shuttle_instance, package_info, helper)
+        else
+          app = apps[choice_index]
+        end
+
+        return app
+      end
+
+      def self.create_app_interactive(shuttle_instance, package_info, helper)
+        app_name = UI.input("app name (default: #{package_info.name}): ")
+        app_name = package_info.name if app_name.to_s.empty?
+        helper.create_app(shuttle_instance, app_name, package_info.platform_id)
       end
 
     end
