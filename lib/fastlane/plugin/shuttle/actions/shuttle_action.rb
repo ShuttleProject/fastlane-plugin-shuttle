@@ -11,7 +11,7 @@ ShuttleApp = Struct.new(:id, :name, :platform_id)
 ShuttleEnvironment = Struct.new(:id, :name, :package_id, :app_id, :versioning_id)
 ShuttleBuild = Struct.new(:id)
 AppEnvironment = Struct.new(:shuttle_app, :shuttle_environment)
-PackageInfo = Struct.new(:id, :path, :platform_id, :release_version, :build_version)
+PackageInfo = Struct.new(:id, :name, :path, :platform_id, :release_version, :build_version)
 ReleaseInfo = Struct.new(:name, :notes, :build, :environment, :commit_id)
 
 module Fastlane

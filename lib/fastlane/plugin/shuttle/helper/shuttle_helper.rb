@@ -21,7 +21,7 @@ module Fastlane
         UI.abort_with_message!("No Package file found") if package_path.to_s.empty?
         UI.abort_with_message!("Package at path #{package_path} does not exist") unless File.exist?(package_path)
         app_info = ::AppInfo.parse(package_path)
-        PackageInfo.new(app_info.identifier, package_path, app_info.os.downcase, app_info.release_version, app_info.build_version)
+        PackageInfo.new(app_info.identifier, app_info.name, package_path, app_info.os.downcase, app_info.release_version, app_info.build_version)
       end
 
       def self.get_release_name(params, app_environment, package_info)
