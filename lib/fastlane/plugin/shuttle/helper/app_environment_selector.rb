@@ -20,6 +20,8 @@ module Fastlane
         
         if environments.empty?
           app = self.get_app_interactive(shuttle_instance, package_info, helper)
+          env = self.get_env_interactive(shuttle_instance, app, package_info, helper)
+          app_environment = AppEnvironment.new(app, env)
         else
           app_environments = helper.get_app_environments(shuttle_instance, environments).select do |app_env|
             app_env.shuttle_app.platform_id == package_info.platform_id
@@ -56,7 +58,7 @@ module Fastlane
         end
         create_new_option = "Create a new one…"
         choice_index = helper.promptChoices(
-            "Can't guess which app and environment to use, please choose the correct one:",
+            "Can't guess which app to use, please choose the correct one:",
             options << create_new_option, 
             "No environments configured for package id #{package_info.id}"
         )
@@ -74,6 +76,29 @@ module Fastlane
         app_name = UI.input("app name (default: #{package_info.name}): ")
         app_name = package_info.name if app_name.to_s.empty?
         helper.create_app(shuttle_instance, app_name, package_info.platform_id)
+      end
+
+      def self.get_env_interactive(shuttle_instance, app, package_info, helper)
+        environments = helper.get_environments_for_app(shuttle_instance, app).select do |env|
+          env.package_id == package_info.id
+        end
+        options = environments.map do |env|
+          "#{env.name}"
+        end
+        create_new_option = "Create a new one…"
+        choice_index = helper.promptChoices(
+            "Can't guess which #{app.name}'s environment to use, please choose the correct one:",
+            options << create_new_option, 
+            "No environments configured for package id #{package_info.id}"
+        )
+        case options[choice_index]
+        when create_new_option
+          # create new env
+        else
+          env = environments[choice_index]
+        end
+
+        return env
       end
 
     end
