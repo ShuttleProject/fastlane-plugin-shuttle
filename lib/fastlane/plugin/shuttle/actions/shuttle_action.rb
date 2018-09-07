@@ -41,19 +41,15 @@ module Fastlane
         if app_environments.count == 1 
             app_environment = app_environments[0]
         else
-          UI.abort_with_message!("Too many environments with package id #{package_info.id} for #{package_info.platform_id}") unless UI.interactive?
           options = app_environments.map do |app_env|
             "#{app_env.shuttle_app.name} (#{app_env.shuttle_environment.name})"
           end
-          abort_options = "None match, abort"
-          user_choice = UI.select "Can't guess which app and environment to use, please choose the correct one:", options << abort_options
-          case user_choice
-          when abort_options
-            UI.user_error!("Aborting…")
-          else
-            choice_index = options.find_index(user_choice)
-            app_environment = app_environments[choice_index]
-          end
+          choice_index = helper.promptChoices(
+              "Can't guess which app and environment to use, please choose the correct one:",
+              options, 
+              "Too many environments with package id #{package_info.id} for #{package_info.platform_id}"
+          )
+          app_environment = app_environments[choice_index]
         end
         
         release = helper.get_release_info(params, app_environment, package_info)

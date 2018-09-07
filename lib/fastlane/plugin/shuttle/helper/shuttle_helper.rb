@@ -156,6 +156,18 @@ module Fastlane
         json_release = self.post(shuttle_instance, "/releases", body)
       end
 
+      def self.promptChoices(question, options, nonInteractiveErrorMessage) 
+        UI.abort_with_message!(nonInteractiveErrorMessage) unless UI.interactive?
+          abort_option = "None match, abort"
+          user_choice = UI.select question, options << abort_option
+          case user_choice
+          when abort_option
+            UI.user_error!("Aborting…")
+          else
+            choice_index = options.find_index(user_choice)
+          end
+      end
+
       def self.print_summary_table(shuttle_instance, app_environment, package_info, release)
         rows = [
           'Shuttle Base URL', 
