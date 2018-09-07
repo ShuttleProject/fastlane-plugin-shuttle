@@ -90,6 +90,30 @@ module Fastlane
         end
       end
 
+      def self.create_environment(shuttle_instance, name, versioning_id, app_id, package_id)
+        body = JSON.generate({
+          data: {
+            type: "environments",
+            attributes: {
+              name: name,
+              path: name.downcase,
+              package_id: package_id,
+              versioning_id: versioning_id
+            },
+            relationships: {
+              app: {
+                data: {
+                  id: app_id,
+                  type: "apps"
+                }
+              }
+            }
+          }
+        })
+        json_env = self.post(shuttle_instance: shuttle_instance, endpoint: "/environments", body: body)
+        self.environment_from_json(json_env)
+      end
+
       def self.app_from_json(json_app)
         json_app_attrb = json_app["attributes"]
         ShuttleApp.new(
