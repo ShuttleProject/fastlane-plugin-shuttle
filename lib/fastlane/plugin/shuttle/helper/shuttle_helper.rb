@@ -99,6 +99,21 @@ module Fastlane
         json_app = self.get(shuttle_instance, "/apps/#{app_id}")
         self.app_from_json(json_app)
       end
+
+      def self.create_app(shuttle_instance, app_name, app_platform)
+        app_path = "#{app_name.downcase}-#{app_platform}"
+        body = JSON.generate({
+          data: {
+            type: "apps",
+            attributes: {
+              name: app_name,
+              path: app_path,
+              platform_id: app_platform
+            }
+          }
+        })
+        json_app = self.post(shuttle_instance: shuttle_instance, endpoint: "/apps", body: body)
+        self.app_from_json(json_app)
       end
 
       def self.get_app_environments(shuttle_instance, environments)
