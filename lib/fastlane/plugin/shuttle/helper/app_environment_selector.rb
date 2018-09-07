@@ -93,12 +93,20 @@ module Fastlane
         )
         case options[choice_index]
         when create_new_option
-          # create new env
+          env = self.create_environment_interactive(shuttle_instance, app, package_info, helper)
         else
           env = environments[choice_index]
         end
 
         return env
+      end
+
+      def self.create_environment_interactive(shuttle_instance, app, package_info, helper)
+        env_name = UI.input("environment name: ")
+        versioning_id_choices = ["version_only", "version_and_build"]
+        choice_index = helper.promptChoices("environment version scheme:", versioning_id_choices, "interactive mode needed")
+        app_name = package_info.name if app_name.to_s.empty?
+        helper.create_environment(shuttle_instance, env_name, versioning_id_choices[choice_index], app.id, package_info.id)
       end
 
     end
