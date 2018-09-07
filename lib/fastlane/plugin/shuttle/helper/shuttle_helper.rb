@@ -80,6 +80,17 @@ module Fastlane
         end
       end
 
+      def self.get_apps(shuttle_instance)
+        self.get(shuttle_instance, "/apps/").map do |json_app|
+          json_app_attrb = json_app["attributes"]
+          ShuttleApp.new(
+            json_app["id"],
+            json_app_attrb["name"],
+            json_app_attrb["platform_id"]
+          )
+        end
+      end
+
       def self.get_app(shuttle_instance, app_id)
         json_app = self.get(shuttle_instance, "/apps/#{app_id}")
         json_app_attrb = json_app["attributes"]
