@@ -25,7 +25,7 @@ module Fastlane
         
         UI.message("Uploading #{package_info.platform_id} package #{package_info.path} with ID #{package_info.id}…")
 
-        app_environment = selector.get_app_environment(shuttle_instance, package_info)
+        app_environment = selector.get_app_environment(shuttle_instance, package_info, params)
         
         release = helper.get_release_info(params, app_environment, package_info)
 

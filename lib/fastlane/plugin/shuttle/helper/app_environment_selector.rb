@@ -8,9 +8,11 @@ module Fastlane
       # class methods that you define here become available in your action
       # as `Helper::ShuttleHelper.your_method`
       #
-      def self.get_app_environment(shuttle_instance, package_info) 
+      def self.get_app_environment(shuttle_instance, package_info, params) 
         helper = Helper::ShuttleHelper
         
+        app = self.get_app_from_params(shuttle_instance, package_info, params, helper)
+
         environments = helper.get_environments(shuttle_instance)
 
         app_environment = nil
@@ -36,6 +38,32 @@ module Fastlane
         end
 
         return app_environment
+      end
+
+      def self.get_app_from_params(shuttle_instance, package_info, params, helper)
+        app_name = params[:app_name]
+        return nil if app_name.to_s.empty?
+        apps = helper.get_apps(shuttle_instance).select do |app|
+          app.name == app_name && 
+          app.platform_id == package_info.platform_id
+        end
+
+        if apps.empty?
+          UI.important("No apps correspond to given name #{app_name} for platform #{package_info.platform_id}…") if apps.empty?
+          return self.get_app_interactive(shuttle_instance, package_info, helper)
+        elsif apps.count == 1 
+          return apps[0]
+        else
+          options = apps.map do |app|
+            "#{app.name} with path #{app.path}"
+          end
+          choice_index = helper.promptChoices(
+              "Can't guess which app to use, please choose the correct one:",
+              options, 
+              "No unique app corresponds to given name #{app_name} for platform #{package_info.platform_id}…"
+          )
+          return apps[choice_index]
+        end
       end
 
       def self.desambiguate_app_environment(app_environments, package_info, helper)
