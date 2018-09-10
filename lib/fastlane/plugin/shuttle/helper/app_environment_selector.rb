@@ -17,18 +17,17 @@ module Fastlane
         environments.select do |env|
           env.package_id == package_info.id
         end
+
+        app_environments = helper.get_app_environments(shuttle_instance, environments).select do |app_env|
+          app_env.shuttle_app.platform_id == package_info.platform_id
+        end
         
-        if environments.empty?
+        ## 4.
+        if app_environments.empty?
           app = self.get_app_interactive(shuttle_instance, package_info, helper)
           env = self.get_env_interactive(shuttle_instance, app, package_info, helper)
           app_environment = AppEnvironment.new(app, env)
         else
-          app_environments = helper.get_app_environments(shuttle_instance, environments).select do |app_env|
-            app_env.shuttle_app.platform_id == package_info.platform_id
-          end
-
-          UI.abort_with_message!("No apps configured for #{package_info.platform_id} with package id #{package_info.id}") if app_environments.empty?
-
           if app_environments.count == 1 
             app_environment = app_environments[0]
           else
@@ -52,7 +51,9 @@ module Fastlane
       end
 
       def self.get_app_interactive(shuttle_instance, package_info, helper)
-        apps = helper.get_apps(shuttle_instance)
+        apps = helper.get_apps(shuttle_instance).select do |app|
+          app.platform_id == package_info.platform_id
+        end
         options = apps.map do |app|
           "#{app.name}"
         end
