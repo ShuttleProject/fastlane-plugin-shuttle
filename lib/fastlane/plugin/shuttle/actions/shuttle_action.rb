@@ -7,7 +7,7 @@ require 'app-info'
 require 'terminal-table'
 
 ShuttleInstance = Struct.new(:base_url, :access_token)
-ShuttleApp = Struct.new(:id, :name, :platform_id)
+ShuttleApp = Struct.new(:id, :name, :platform_id, :path)
 ShuttleEnvironment = Struct.new(:id, :name, :package_id, :app_id, :versioning_id)
 ShuttleBuild = Struct.new(:id)
 AppEnvironment = Struct.new(:shuttle_app, :shuttle_environment)

@@ -119,7 +119,8 @@ module Fastlane
         ShuttleApp.new(
           json_app["id"],
           json_app_attrb["name"],
-          json_app_attrb["platform_id"]
+          json_app_attrb["platform_id"],
+          json_app_attrb["path"]
         )
       end
 
