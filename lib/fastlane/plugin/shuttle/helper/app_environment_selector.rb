@@ -91,14 +91,8 @@ module Fastlane
             options << create_new_option, 
             "No environments configured for package id #{package_info.id}"
         )
-        case options[choice_index]
-        when create_new_option
-          env = self.create_environment_interactive(shuttle_instance, app, package_info, helper)
-        else
-          env = environments[choice_index]
-        end
-
-        return env
+        return self.create_environment_interactive(shuttle_instance, app, package_info, helper) if options[choice_index] == create_new_option
+        return environments[choice_index]
       end
 
       def self.create_environment_interactive(shuttle_instance, app, package_info, helper)
