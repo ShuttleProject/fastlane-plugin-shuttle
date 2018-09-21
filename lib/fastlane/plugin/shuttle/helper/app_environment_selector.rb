@@ -32,14 +32,14 @@ module Fastlane
           if app_environments.count == 1 
             app_environment = app_environments[0]
           else
-            app_environment = self.desambiguateAppEnvironment(app_environments, package_info, helper)
+            app_environment = self.desambiguate_app_environment(app_environments, package_info, helper)
           end
         end
 
         return app_environment
       end
 
-      def self.desambiguateAppEnvironment(app_environments, package_info, helper)
+      def self.desambiguate_app_environment(app_environments, package_info, helper)
         options = app_environments.map do |app_env|
           "#{app_env.shuttle_app.name} (#{app_env.shuttle_environment.name})"
         end
