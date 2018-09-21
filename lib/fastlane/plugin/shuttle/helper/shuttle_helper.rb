@@ -110,7 +110,7 @@ module Fastlane
             }
           }
         })
-        json_env = self.post(shuttle_instance: shuttle_instance, endpoint: "/environments", body: body)
+        json_env = self.post(shuttle_instance, "/environments", body)
         self.environment_from_json(json_env)
       end
 
@@ -146,7 +146,7 @@ module Fastlane
             }
           }
         })
-        json_app = self.post(shuttle_instance: shuttle_instance, endpoint: "/apps", body: body)
+        json_app = self.post(shuttle_instance, "/apps", body)
         self.app_from_json(json_app)
       end
 
