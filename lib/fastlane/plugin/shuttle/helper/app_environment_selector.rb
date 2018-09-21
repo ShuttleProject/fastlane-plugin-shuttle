@@ -49,7 +49,7 @@ module Fastlane
         end
 
         if apps.empty?
-          UI.important("No apps correspond to given name #{app_name} for platform #{package_info.platform_id}…") if apps.empty?
+          UI.important("No apps correspond to given name #{app_name} for platform #{package_info.platform_id}…")
           return self.get_app_interactive(shuttle_instance, package_info, helper)
         elsif apps.count == 1 
           return apps[0]
