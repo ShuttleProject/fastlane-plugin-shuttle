@@ -103,7 +103,7 @@ module Fastlane
         end
       end
 
-      def self.post(shuttle_instance:, endpoint:, body:, is_multipart: false, debug: false)
+      def self.post(shuttle_instance, endpoint, body, is_multipart: false, debug: false)
         connection = self.connection(shuttle_instance, endpoint, is_multipart)
         response = connection.post do |req|
           req.body = body
@@ -124,7 +124,7 @@ module Fastlane
           "build[app_id]": app_id,
           "build[package]": Faraday::UploadIO.new(package_info.path, 'application/octet-stream')
         }
-        json_build = self.post(shuttle_instance: shuttle_instance, endpoint: '/builds', body: body, is_multipart: true)
+        json_build = self.post(shuttle_instance, '/builds', body, is_multipart: true)
         ShuttleBuild.new(json_build["id"])
       end
 
@@ -153,7 +153,7 @@ module Fastlane
             }
           }
         })
-        json_release = self.post(shuttle_instance: shuttle_instance, endpoint: "/releases", body: body)
+        json_release = self.post(shuttle_instance, "/releases", body)
       end
 
       def self.print_summary_table(shuttle_instance, app_environment, package_info, release)
