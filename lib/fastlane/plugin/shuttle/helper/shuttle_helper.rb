@@ -216,7 +216,7 @@ module Fastlane
         json_release = self.post(shuttle_instance, "/releases", body)
       end
 
-      def self.promptChoices(question, options, nonInteractiveErrorMessage) 
+      def self.prompt_choices(question, options, nonInteractiveErrorMessage) 
         UI.abort_with_message!(nonInteractiveErrorMessage) unless UI.interactive?
           abort_option = "None match, abort"
           user_choice = UI.select question, options << abort_option
