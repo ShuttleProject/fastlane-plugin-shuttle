@@ -12,6 +12,7 @@ module Fastlane
         helper = Helper::ShuttleHelper
         
         app = self.get_app_from_params(shuttle_instance, package_info, params, helper)
+        env = self.get_env_from_params(shuttle_instance, app, package_info, params, helper)
 
         environments = helper.get_environments(shuttle_instance)
 
@@ -63,6 +64,33 @@ module Fastlane
               "No unique app corresponds to given name #{app_name} for platform #{package_info.platform_id}…"
           )
           return apps[choice_index]
+        end
+      end
+
+      def self.get_env_from_params(shuttle_instance, app, package_info, params, helper)
+        env_name = params[:env_name]
+        return nil if env_name.to_s.empty? or app.nil?
+        environments = helper.get_environments_for_app(shuttle_instance, app).select do |env|
+          env.name == env_name &&
+          env.package_id == package_info.id
+        end
+
+        if environments.empty?
+          UI.important("No environements named #{env_name} found for app #{app.name} and package ID #{package_info.id}…")
+          return nil
+        elsif environements.count == 1
+          return environements[0]
+        else
+          ## TODO: Finish this
+          # options = apps.map do |app|
+          #   "#{app.name} with path #{app.path}"
+          # end
+          # choice_index = helper.promptChoices(
+          #     "Can't guess which app to use, please choose the correct one:",
+          #     options, 
+          #     "No unique app corresponds to given name #{app_name} for platform #{package_info.platform_id}…"
+          # )
+          # return apps[choice_index]
         end
       end
 
