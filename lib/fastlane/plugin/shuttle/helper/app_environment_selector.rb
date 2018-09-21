@@ -11,8 +11,8 @@ module Fastlane
       def self.get_app_environment(shuttle_instance, package_info, params) 
         helper = Helper::ShuttleHelper
         
-        app = self.get_app_from_params(shuttle_instance, package_info, params, helper)
-        env = self.get_env_from_params(shuttle_instance, app, package_info, params, helper)
+        app_environment = self.get_app_env_from_params(shuttle_instance, package_info, params, helper)
+        return app_environment unless app_environment.nil?
 
         environments = helper.get_environments(shuttle_instance)
 
@@ -25,7 +25,6 @@ module Fastlane
           app_env.shuttle_app.platform_id == package_info.platform_id
         end
         
-        ## 4.
         if app_environments.empty?
           app = self.get_app_interactive(shuttle_instance, package_info, helper)
           env = self.get_env_interactive(shuttle_instance, app, package_info, helper)
@@ -41,57 +40,17 @@ module Fastlane
         return app_environment
       end
 
-      def self.get_app_from_params(shuttle_instance, package_info, params, helper)
-        app_name = params[:app_name]
-        return nil if app_name.to_s.empty?
-        apps = helper.get_apps(shuttle_instance).select do |app|
-          app.name == app_name && 
-          app.platform_id == package_info.platform_id
-        end
-
-        if apps.empty?
-          UI.important("No apps correspond to given name #{app_name} for platform #{package_info.platform_id}…")
-          return self.get_app_interactive(shuttle_instance, package_info, helper)
-        elsif apps.count == 1 
-          return apps[0]
-        else
-          options = apps.map do |app|
-            "#{app.name} with path #{app.path}"
-          end
-          choice_index = helper.promptChoices(
-              "Can't guess which app to use, please choose the correct one:",
-              options, 
-              "No unique app corresponds to given name #{app_name} for platform #{package_info.platform_id}…"
-          )
-          return apps[choice_index]
-        end
-      end
-
-      def self.get_env_from_params(shuttle_instance, app, package_info, params, helper)
-        env_name = params[:env_name]
-        return nil if env_name.to_s.empty? or app.nil?
-        environments = helper.get_environments_for_app(shuttle_instance, app).select do |env|
-          env.name == env_name &&
-          env.package_id == package_info.id
-        end
-
-        if environments.empty?
-          UI.important("No environements named #{env_name} found for app #{app.name} and package ID #{package_info.id}…")
-          return nil
-        elsif environements.count == 1
-          return environements[0]
-        else
-          ## TODO: Finish this
-          # options = apps.map do |app|
-          #   "#{app.name} with path #{app.path}"
-          # end
-          # choice_index = helper.promptChoices(
-          #     "Can't guess which app to use, please choose the correct one:",
-          #     options, 
-          #     "No unique app corresponds to given name #{app_name} for platform #{package_info.platform_id}…"
-          # )
-          # return apps[choice_index]
-        end
+      def self.get_app_env_from_params(shuttle_instance, package_info, params, helper)
+        env_id = params[:env_id]
+        return nil if env_id.to_s.empty?
+        environment = helper.get_environment(shuttle_instance, env_id)
+        app = helper.get_app(shuttle_instance, environment.app_id)
+          
+        return AppEnvironment.new(app, environment) if environment.package_id == package_info.id && app.platform_id == package_info.platform_id
+          
+        UI.important("App #{app.name} doesn't match the given build platform #{package_info.platform_id}, please check that #{env_id} is the correct environment ID.") unless app.platform_id == package_info.platform_id
+        UI.important("Environement #{environment.name} with ID #{env_id} doesn't match the build's package ID #{package_info.id}, please check that you set the correct environment ID") unless environment.package_id == package_info.id
+        return nil
       end
 
       def self.desambiguate_app_environment(app_environments, package_info, helper)
