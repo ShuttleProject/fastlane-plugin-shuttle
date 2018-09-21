@@ -70,11 +70,6 @@ module Fastlane
                                description: "The access token of your account on Shuttle",
                                   optional: false,
                                       type: String),
-          FastlaneCore::ConfigItem.new(key: :env_name,
-                                  env_name: "SHUTTLE_ENV_NAME",
-                               description: "The name of the environment in the selected app to publish the build to (if not provided, it will try to guess it or ask to select/create it interactively)",
-                                  optional: true,
-                                      type: String),
           FastlaneCore::ConfigItem.new(key: :release_name,
                                   env_name: "SHUTTLE_RELEASE_NAME",
                                description: "The name of the release (eg. MyApp v3)",
@@ -85,7 +80,17 @@ module Fastlane
                                description: "The release notes of the release (eg. Bug fixes)",
                                   optional: true,
                              default_value: "Bug fixes and improvements",
-                                      type: String)
+                                      type: String),
+          FastlaneCore::ConfigItem.new(key: :app_id,
+                                  env_name: "SHUTTLE_APP_ID",
+                               description: "The ID of the app to publish the build to (if not provided, it will try to guess it or ask to select/create it interactively then display the value so you can set it definitively)",
+                                  optional: true,
+                                      type: String),
+          FastlaneCore::ConfigItem.new(key: :env_id,
+                                  env_name: "SHUTTLE_ENV_ID",
+                               description: "The ID of the environment in the selected app to publish the build to (if not provided, it will try to guess it or ask to select/create it interactively then display the value so you can set it definitively)",
+                                  optional: true,
+                                      type: String),                                      
         ]
       end
 
