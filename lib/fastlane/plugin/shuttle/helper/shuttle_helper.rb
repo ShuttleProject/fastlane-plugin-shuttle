@@ -180,10 +180,21 @@ module Fastlane
           UI.message(JSON.pretty_generate(data)) if debug == true
           data["data"]
         else
-          UI.abort_with_message!("Error #{response.status.to_s} occured while calling endpoint #{endpoint} with body #{body}")
+          self.abort(endpoint, body, response)
           nil
         end
       end
+
+      def self.abort(endpoint, body, response)
+        reqBody = JSON.parse body
+        errorBody = JSON.parse response.body
+        case endpoint
+        when "/releases"
+          UI.abort_with_message!("💥 Can't create release for #{reqBody["data"]["attributes"]["title"]}: #{errorBody["errors"][0]["detail"]}")
+        else
+          UI.abort_with_message!("Error #{response.status.to_s} occured while calling endpoint #{endpoint} with body #{body} => #{errorBody["errors"][0]["detail"]}")
+        end
+      end 
 
       def self.upload_build(shuttle_instance, package_info, app_id)
         body = {
