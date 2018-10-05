@@ -14,10 +14,10 @@ module Fastlane
         app_environment = self.get_app_env_from_params(shuttle_instance, package_info, params, helper)
         return app_environment unless app_environment.nil?
 
-        environments = helper.get_environments(shuttle_instance)
+        all_environments = helper.get_environments(shuttle_instance)
 
         app_environment = nil
-        environments.select do |env|
+        environments = all_environments.select do |env|
           env.package_id == package_info.id
         end
 
