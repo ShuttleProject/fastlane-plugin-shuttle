@@ -8,7 +8,7 @@ require 'terminal-table'
 
 ShuttleInstance = Struct.new(:base_url, :access_token)
 ShuttleApp = Struct.new(:id, :name, :platform_id, :path)
-ShuttleEnvironment = Struct.new(:id, :name, :package_id, :app_id, :versioning_id)
+ShuttleEnvironment = Struct.new(:id, :name, :package_id, :app_id, :versioning_id, :path)
 ShuttleBuild = Struct.new(:id)
 AppEnvironment = Struct.new(:shuttle_app, :shuttle_environment)
 PackageInfo = Struct.new(:id, :name, :path, :platform_id, :release_version, :build_version)
@@ -16,6 +16,10 @@ ReleaseInfo = Struct.new(:name, :notes, :build, :environment, :commit_id)
 
 module Fastlane
   module Actions
+    module SharedValues
+      SHUTTLE_DOWNLOAD_LINK = :SHUTTLE_DOWNLOAD_LINK
+    end
+
     class ShuttleAction < Action
       def self.run(params)
         helper = Helper::ShuttleHelper
@@ -34,6 +38,11 @@ module Fastlane
         release.build = helper.upload_build(shuttle_instance, package_info, app_environment.shuttle_app.id)
 
         helper.create_release(shuttle_instance, release)
+
+        download_url = helper.download_url(shuttle_instance, app_environment, package_info)
+        Actions.lane_context[SharedValues::SHUTTLE_DOWNLOAD_LINK] = download_url
+
+        return download_url
       end
 
       def self.description
@@ -46,11 +55,17 @@ module Fastlane
 
       def self.return_value
         # If your method provides a return value, you can describe here what it does
+        "Shuttle download link"
       end
 
       def self.details
         # Optional:
         "Fastlane plugin to help you distribute your builds on your Shuttle.tools instance"
+
+      def self.output
+        [
+          ['SHUTTLE_DOWNLOAD_LINK', 'The newly generated download link for this build']
+        ]
       end
 
       def self.available_options

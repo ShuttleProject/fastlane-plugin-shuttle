@@ -1,5 +1,6 @@
 require 'fastlane_core/ui/ui'
 require 'fastlane/action'
+require 'uri'
 
 module Fastlane
   UI = FastlaneCore::UI unless Fastlane.const_defined?("UI")
@@ -75,7 +76,8 @@ module Fastlane
           attrb["name"],
           attrb["package_id"],
           json_env["relationships"]["app"]["data"]["id"],
-          attrb["versioning_id"]
+          attrb["versioning_id"],
+          attrb["path"]
         )
       end
 
@@ -246,6 +248,18 @@ module Fastlane
           end
       end
 
+      def self.download_url(shuttle_instance, app_environment, package_info)
+        app = app_environment.shuttle_app
+        env = app_environment.shuttle_environment
+        url_path = File.join(
+                      app.path, 
+                      env.path,
+                      package_info.release_version)
+        url_path = File.join(url_path, package_info.build_version) if env.versioning_id == "version_and_build"
+        return URI.join(
+          shuttle_instance.base_url, url_path).to_s
+      end
+
       def self.print_summary_table(shuttle_instance, app_environment, package_info, release)
         rows = [
           'Shuttle Base URL', 
@@ -259,7 +273,8 @@ module Fastlane
           'Release version',
           'Build version',
           'Release notes',
-          'Commit hash'
+          'Commit hash',
+          'Shuttle release URL'
         ].zip([
             shuttle_instance.base_url, 
             app_environment.shuttle_app.name,
@@ -272,7 +287,8 @@ module Fastlane
             package_info.release_version,
             package_info.build_version,
             release.notes,
-            release.commit_id
+            release.commit_id,
+            self.download_url(shuttle_instance, app_environment, package_info)
         ])
         table = Terminal::Table.new :rows => rows, :title => "Shuttle upload info summary".green
         puts
