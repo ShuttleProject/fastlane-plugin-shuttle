@@ -1,4 +1,5 @@
 require 'fastlane_core/ui/ui'
+require 'fastlane/action'
 
 module Fastlane
   UI = FastlaneCore::UI unless Fastlane.const_defined?("UI")
@@ -16,8 +17,8 @@ module Fastlane
 
       def self.get_app_info(params)
         package_path = params[:package_path] unless params[:package_path].to_s.empty?
-        package_path = lane_context[SharedValues::IPA_OUTPUT_PATH] if package_path.to_s.empty?
-        package_path = lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH] if package_path.to_s.empty?
+        package_path = Fastlane::Actions.lane_context[Fastlane::Actions::SharedValues::IPA_OUTPUT_PATH] if package_path.to_s.empty?
+        package_path = Fastlane::Actions.lane_context[Fastlane::Actions::SharedValues::GRADLE_APK_OUTPUT_PATH] if package_path.to_s.empty?
         UI.abort_with_message!("No Package file found") if package_path.to_s.empty?
         UI.abort_with_message!("Package at path #{package_path} does not exist") unless File.exist?(package_path)
         app_info = ::AppInfo.parse(package_path)
