@@ -46,11 +46,11 @@ module Fastlane
       end
 
       def self.description
-        "Publish your builds on Shuttle.tools"
+        "Publish your builds on [Shuttle.tools](https://www.shuttle.tools)"
       end
 
       def self.authors
-        ["Frédéric Ruaudel"]
+        ["Frédéric Ruaudel <fred@h2g.io>"]
       end
 
       def self.return_value
@@ -60,7 +60,11 @@ module Fastlane
 
       def self.details
         # Optional:
-        "Fastlane plugin to help you distribute your builds on your Shuttle.tools instance"
+        [
+          "If you don't know which `env_id` to set, just run the action interactively without `env_id` parameter to force the plugin to fetch available info from your instance or give you the opportunity to create any needed app and environment that would be missing.",
+          "Once done, you will get the associated `env_id` in the _Shuttle upload info summary_ table at the end of the script execution. Just add it in your action parameter to make it works reliably next time including in your CI non-interactive environment"
+        ].join("\n")
+      end
 
       def self.output
         [
@@ -72,7 +76,7 @@ module Fastlane
         [
           FastlaneCore::ConfigItem.new(key: :package_path,
                                   env_name: "SHUTTLE_PACKAGE_PATH",
-                               description: "The path to the new app you want to upload to Shuttle (check in shared values GRADLE_APK_OUTPUT_PATH or IPA_OUTPUT_PATH if not present)",
+                               description: "The path to the new app you want to upload to Shuttle ( if not provided, it'll check in shared values GRADLE_APK_OUTPUT_PATH or IPA_OUTPUT_PATH)",
                                   optional: true,
                                       type: String),
           FastlaneCore::ConfigItem.new(key: :base_url,
@@ -101,6 +105,24 @@ module Fastlane
                                description: "The uniq ID of the app's environment you want to publish the build to (if not provided, it will try to guess it or ask to select/create it interactively then display the value so you can set it definitively)",
                                   optional: true,
                                       type: String),                                      
+        ]
+      end
+
+      def self.example_code
+        [
+          'download_url = shuttle(
+            access_token: "...",
+            base_url: "https://myInstance.shuttle.tools",
+            package_path: "./app.ipa"
+          )',
+          'shuttle(
+            access_token: "...",
+            base_url: "https://myInstance.shuttle.tools",
+            package_path: "./app.ipa",
+            env_id: "UD6VCR-2X7TME-XSMZW6-MNXIR7",
+            release_name: "My App v5.0-1",
+            release_notes: "Changelog"
+          )'
         ]
       end
 
