@@ -84,6 +84,11 @@ module Fastlane
         end
       end
 
+      def self.get_environment(shuttle_instance, env_id)
+        json_env = self.get(shuttle_instance, "/environments/#{env_id}")
+        self.environment_from_json(json_env)
+      end
+
       def self.get_environments_for_app(shuttle_instance, app)
         self.get(shuttle_instance, "/apps/#{app.id}/environments").map do |json_env|
           self.environment_from_json(json_env)
@@ -119,7 +124,8 @@ module Fastlane
         ShuttleApp.new(
           json_app["id"],
           json_app_attrb["name"],
-          json_app_attrb["platform_id"]
+          json_app_attrb["platform_id"],
+          json_app_attrb["path"]
         )
       end
 
@@ -233,6 +239,7 @@ module Fastlane
           'Shuttle Base URL', 
           'Shuttle app name', 
           'Shuttle env name', 
+          'Shuttle env ID', 
           'Package path', 
           'Platform', 
           'Package Id',
@@ -245,6 +252,7 @@ module Fastlane
             shuttle_instance.base_url, 
             app_environment.shuttle_app.name,
             app_environment.shuttle_environment.name, 
+            app_environment.shuttle_environment.id, 
             package_info.path, 
             package_info.platform_id, 
             package_info.id,

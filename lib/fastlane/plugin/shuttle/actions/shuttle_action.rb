@@ -7,7 +7,7 @@ require 'app-info'
 require 'terminal-table'
 
 ShuttleInstance = Struct.new(:base_url, :access_token)
-ShuttleApp = Struct.new(:id, :name, :platform_id)
+ShuttleApp = Struct.new(:id, :name, :platform_id, :path)
 ShuttleEnvironment = Struct.new(:id, :name, :package_id, :app_id, :versioning_id)
 ShuttleBuild = Struct.new(:id)
 AppEnvironment = Struct.new(:shuttle_app, :shuttle_environment)
@@ -25,7 +25,7 @@ module Fastlane
         
         UI.message("Uploading #{package_info.platform_id} package #{package_info.path} with ID #{package_info.id}…")
 
-        app_environment = selector.get_app_environment(shuttle_instance, package_info)
+        app_environment = selector.get_app_environment(shuttle_instance, package_info, params)
         
         release = helper.get_release_info(params, app_environment, package_info)
 
@@ -80,7 +80,12 @@ module Fastlane
                                description: "The release notes of the release (eg. Bug fixes)",
                                   optional: true,
                              default_value: "Bug fixes and improvements",
-                                      type: String)
+                                      type: String),
+          FastlaneCore::ConfigItem.new(key: :env_id,
+                                  env_name: "SHUTTLE_ENV_ID",
+                               description: "The uniq ID of the app's environment you want to publish the build to (if not provided, it will try to guess it or ask to select/create it interactively then display the value so you can set it definitively)",
+                                  optional: true,
+                                      type: String),                                      
         ]
       end
 
