@@ -7,8 +7,8 @@ require 'fastlane/plugin/shuttle/version'
 Gem::Specification.new do |spec|
   spec.name          = 'fastlane-plugin-shuttle'
   spec.version       = Fastlane::Shuttle::VERSION
-  spec.author        = 'Frédéric Ruaudel'
-  spec.email         = 'fred@h2g.io'
+  spec.author        = 'H2G Lab'
+  spec.email         = 'shuttle@h2g.io'
 
   spec.summary       = 'Publish your builds on Shuttle.tools'
   # spec.homepage      = "https://github.com/<GITHUB_USERNAME>/fastlane-plugin-shuttle"
@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   # Don't add a dependency to fastlane or fastlane_re
   # since this would cause a circular dependency
 
-  # spec.add_dependency 'your-dependency', '~> 1.0.0'
+  spec.add_dependency 'app-info', '~> 1.0.4'
 
   spec.add_development_dependency('pry')
   spec.add_development_dependency('bundler')
