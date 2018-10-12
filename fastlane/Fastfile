@@ -1,3 +1,54 @@
-lane :test do
-  shuttle
+# Setup a file `.env.default` in the root of your project
+# and add your instance's access token like this
+#
+# `SHUTTLE_ACCESS_TOKEN="rPCKwZhpTFxjEacjLLfZXR5d"`
+#
+
+platform :ios do
+  desc "Build and distribute on Shuttle"
+  lane :beta do
+    build_app(
+        scheme: "sample-ios-apps",
+        output_directory: "./outputs")
+    # When done just after a gym command, it can get the package_path
+    # Automatically via the SharedValues dictionary
+    shuttle(
+        base_url: "http://myInstance.shuttle.tools/")
+  end
+
+  lane :upload do
+    # To be sure it works even on your CI environment, be sure
+    # to setup the env_id given by the plugin after you run it
+    # interactively the first time
+    # It will return the download url on your instance
+    url = shuttle(
+      package_path: "./outputs/sample-ios-apps.ipa",
+      env_id: "UD6VCR-2X7TME-XSMZW6-MNXIR7",
+      base_url: "http://myInstance.shuttle.tools/")
+  end
+end
+
+platform :android do
+  desc "Build and distribute on Shuttle"
+  lane :beta do
+    gradle(
+      task: 'assemble',
+      build_type: 'Release'
+    )
+    # When done just after a gradle command, it can get the package_path
+    # Automatically via the SharedValues dictionary
+    shuttle(
+        base_url: "http://myInstance.shuttle.tools/")
+  end
+
+  lane :upload do
+    # To be sure it works even on your CI environment, be sure
+    # to setup the env_id given by the plugin after you run it
+    # interactively the first time
+    # It will return the download url on your instance
+    url = shuttle(
+      package_path: "./app/build/outputs/apk/release/app-release.apk",
+      env_id: "GB0BW3-5G4AFI-J0RWEF-7S19M8",
+      base_url: "http://myInstance.shuttle.tools/")
+  end
 end
