@@ -21,7 +21,7 @@ module Fastlane
         UI.abort_with_message!("No Package file found") if package_path.to_s.empty?
         UI.abort_with_message!("Package at path #{package_path} does not exist") unless File.exist?(package_path)
         app_info = ::AppInfo.parse(package_path)
-        PackageInfo.new(app_info.identifier, package_path, app_info.os.downcase, app_info.release_version, app_info.build_version)
+        PackageInfo.new(app_info.identifier, app_info.name, package_path, app_info.os.downcase, app_info.release_version, app_info.build_version)
       end
 
       def self.get_release_name(params, app_environment, package_info)
@@ -67,27 +67,87 @@ module Fastlane
         end
       end
 
+      def self.environment_from_json(json_env)
+        attrb = json_env["attributes"]
+        ShuttleEnvironment.new(
+          json_env["id"],
+          attrb["name"],
+          attrb["package_id"],
+          json_env["relationships"]["app"]["data"]["id"],
+          attrb["versioning_id"]
+        )
+      end
+
       def self.get_environments(shuttle_instance)
-        self.get(shuttle_instance, '/environments').map do |env|
-          attrb = env["attributes"]
-          ShuttleEnvironment.new(
-            env["id"],
-            attrb["name"],
-            attrb["package_id"],
-            env["relationships"]["app"]["data"]["id"],
-            attrb["versioning_id"]
-          )
+        self.get(shuttle_instance, '/environments').map do |json_env|
+          self.environment_from_json(json_env)
         end
       end
 
-      def self.get_app(shuttle_instance, app_id)
-        json_app = self.get(shuttle_instance, "/apps/#{app_id}")
+      def self.get_environments_for_app(shuttle_instance, app)
+        self.get(shuttle_instance, "/apps/#{app.id}/environments").map do |json_env|
+          self.environment_from_json(json_env)
+        end
+      end
+
+      def self.create_environment(shuttle_instance, name, versioning_id, app_id, package_id)
+        body = JSON.generate({
+          data: {
+            type: "environments",
+            attributes: {
+              name: name,
+              path: name.downcase,
+              package_id: package_id,
+              versioning_id: versioning_id
+            },
+            relationships: {
+              app: {
+                data: {
+                  id: app_id,
+                  type: "apps"
+                }
+              }
+            }
+          }
+        })
+        json_env = self.post(shuttle_instance, "/environments", body)
+        self.environment_from_json(json_env)
+      end
+
+      def self.app_from_json(json_app)
         json_app_attrb = json_app["attributes"]
         ShuttleApp.new(
           json_app["id"],
           json_app_attrb["name"],
           json_app_attrb["platform_id"]
         )
+      end
+
+      def self.get_apps(shuttle_instance)
+        self.get(shuttle_instance, "/apps/").map do |json_app|
+          self.app_from_json(json_app)
+        end
+      end
+
+      def self.get_app(shuttle_instance, app_id)
+        json_app = self.get(shuttle_instance, "/apps/#{app_id}")
+        self.app_from_json(json_app)
+      end
+
+      def self.create_app(shuttle_instance, app_name, app_platform)
+        app_path = "#{app_name.downcase}-#{app_platform}"
+        body = JSON.generate({
+          data: {
+            type: "apps",
+            attributes: {
+              name: app_name,
+              path: app_path,
+              platform_id: app_platform
+            }
+          }
+        })
+        json_app = self.post(shuttle_instance, "/apps", body)
+        self.app_from_json(json_app)
       end
 
       def self.get_app_environments(shuttle_instance, environments)
@@ -154,6 +214,18 @@ module Fastlane
           }
         })
         json_release = self.post(shuttle_instance, "/releases", body)
+      end
+
+      def self.prompt_choices(question, options, nonInteractiveErrorMessage) 
+        UI.abort_with_message!(nonInteractiveErrorMessage) unless UI.interactive?
+          abort_option = "None match, abort"
+          user_choice = UI.select question, options << abort_option
+          case user_choice
+          when abort_option
+            UI.user_error!("Aborting…")
+          else
+            choice_index = options.find_index(user_choice)
+          end
       end
 
       def self.print_summary_table(shuttle_instance, app_environment, package_info, release)
