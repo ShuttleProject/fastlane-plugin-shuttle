@@ -1,6 +1,6 @@
-# shuttle plugin
+# Shuttle `fastlane` plugin
 
-[![fastlane Plugin Badge](https://rawcdn.githack.com/fastlane/fastlane/master/fastlane/assets/plugin-badge.svg)](https://rubygems.org/gems/fastlane-plugin-shuttle)
+[![fastlane Plugin Badge](https://rawcdn.githack.com/fastlane/fastlane/master/fastlane/assets/plugin-badge.svg)](https://rubygems.org/gems/fastlane-plugin-shuttle) [![Gem Version](https://badge.fury.io/rb/fastlane-plugin-shuttle.svg)](https://badge.fury.io/rb/fastlane-plugin-shuttle)
 
 ## Getting Started
 
@@ -10,17 +10,37 @@ This project is a [_fastlane_](https://github.com/fastlane/fastlane) plugin. To 
 fastlane add_plugin shuttle
 ```
 
-## About shuttle
+## About Shuttle
 
-Publish your builds on Shuttle.tools
+Publish your builds on your [Shuttle.tools](https://shuttle.tools) instance
 
-**Note to author:** Add a more detailed description about this plugin here. If your plugin contains multiple actions, make sure to mention them here.
+This plugin provides a `shuttle` action which allows you to upload and distribute your apps to your testers via your Shuttle instance interface.
+
+## Usage
+
+To get started, first, [obtain an API access token](https://docs.shuttle.tools/api-access-token/) in your Shuttle instance admin section. The API Access Token is used to authenticate with the Shuttle API in each call.
+
+```ruby
+url = shuttle(
+      access_token: <shuttle access token>,
+      package_path: <path to your IPA or APK binary file>,
+      release_name: <release name displayed in shuttle>,
+      release_notes: <release notes>,
+      base_url: "https://<your instance name>.shuttle.tools/")
+```
+
+The action parameters `access_token` can be omitted when its value is [set as environment variables](https://docs.fastlane.tools/advanced/#environment-variables). Below a list of all available environment variables:
+
+- `SHUTTLE_ACCESS_TOKEN` - API Access Token for Shuttle API
+- `SHUTTLE_BASE_URL` - Shuttle instance URL (eg. https://<your instance name>.shuttle.tools/)
+- `SHUTTLE_RELEASE_NAME` - The name of the release (eg. MyApp v3)
+- `SHUTTLE_PACKAGE_PATH` - Build release path for android or ios build (if not provided, it'll check in shared values `GRADLE_APK_OUTPUT_PATH` or `IPA_OUTPUT_PATH`)
+- `SHUTTLE_ENV_ID` - The uniq ID of the app's environment you want to publish the build to (if not provided, it will try to guess it or ask to select/create it interactively then display the value so you can set it definitively)
+- `SHUTTLE_RELEASE_NOTES` - Release notes
 
 ## Example
 
 Check out the [example `Fastfile`](fastlane/Fastfile) to see how to use this plugin. Try it by cloning the repo, running `fastlane install_plugins` and `bundle exec fastlane test`.
-
-**Note to author:** Please set up a sample project to make it easy for users to explore what your plugin does. Provide everything that is necessary to try out the plugin in this project (including a sample Xcode/Android project if necessary)
 
 ## Run tests for this plugin
 
