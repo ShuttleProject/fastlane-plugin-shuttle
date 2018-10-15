@@ -7,11 +7,11 @@ require 'fastlane/plugin/shuttle/version'
 Gem::Specification.new do |spec|
   spec.name          = 'fastlane-plugin-shuttle'
   spec.version       = Fastlane::Shuttle::VERSION
-  spec.author        = 'H2G Lab'
-  spec.email         = 'shuttle@h2g.io'
+  spec.author        = 'Shuttle Project'
+  spec.email         = 'dev@shuttle.tools'
 
   spec.summary       = 'Publish your builds on Shuttle.tools'
-  # spec.homepage      = "https://github.com/<GITHUB_USERNAME>/fastlane-plugin-shuttle"
+  spec.homepage      = "https://github.com/ShuttleProject/fastlane-plugin-shuttle"
   spec.license       = "MIT"
 
   spec.files         = Dir["lib/**/*"] + %w(README.md LICENSE)
