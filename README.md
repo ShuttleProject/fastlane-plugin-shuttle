@@ -18,7 +18,7 @@ This plugin provides a `shuttle` action which allows you to upload and distribut
 
 ## Usage
 
-To get started, first, [obtain an API access token](https://docs.shuttle.tools/admin-guide/) in your Shuttle instance admin section. The API Access Token is used to authenticate with the Shuttle API in each call.
+To get started, first, [obtain an API access token](https://docs.shuttle.tools/api-access-token/) in your Shuttle instance admin section. The API Access Token is used to authenticate with the Shuttle API in each call.
 
 ```ruby
 url = shuttle(
