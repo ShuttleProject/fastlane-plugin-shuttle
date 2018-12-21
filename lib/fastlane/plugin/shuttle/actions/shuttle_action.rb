@@ -91,7 +91,7 @@ module Fastlane
                                       type: String),
           FastlaneCore::ConfigItem.new(key: :release_name,
                                   env_name: "SHUTTLE_RELEASE_NAME",
-                               description: "The name of the release (eg. MyApp v3)",
+                               description: "The name of the release (eg. Sprint #14)",
                                   optional: true,
                                       type: String),
           FastlaneCore::ConfigItem.new(key: :release_notes,
@@ -120,7 +120,7 @@ module Fastlane
             base_url: "https://myInstance.shuttle.tools",
             package_path: "./app.ipa",
             env_id: "UD6VCR-2X7TME-XSMZW6-MNXIR7",
-            release_name: "My App v5.0-1",
+            release_name: "Sprint #14",
             release_notes: "Changelog"
           )'
         ]

@@ -26,19 +26,11 @@ module Fastlane
         PackageInfo.new(app_info.identifier, app_info.name, package_path, app_info.os.downcase, app_info.release_version, app_info.build_version)
       end
 
-      def self.get_release_name(params, app_environment, package_info)
-        return params[:release_name] unless params[:release_name].to_s.empty?
-        release_name = "#{app_environment.shuttle_app.name} v#{package_info.release_version}"
-        if app_environment.shuttle_environment.versioning_id == "version_and_build"
-          return "#{release_name}-#{package_info.build_version}"
-        end 
-        return release_name
-      end
-
       def self.get_release_info(params, app_environment, package_info) 
-        release_name = self.get_release_name(params, app_environment, package_info)
+        name = params[:release_name]
+        notes = params[:release_notes]
         commit_id = Helper.backticks("git show --format='%H' --quiet").chomp
-        ReleaseInfo.new(release_name, params[:release_notes], nil, app_environment.shuttle_environment, commit_id)
+        ReleaseInfo.new(name, notes, nil, app_environment.shuttle_environment, commit_id)
       end
 
       def self.connection(shuttle_instance, endpoint, is_multipart = false)
