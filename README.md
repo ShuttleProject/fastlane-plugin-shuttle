@@ -24,7 +24,7 @@ To get started, first, [obtain an API access token](https://docs.shuttle.tools/a
 url = shuttle(
       access_token: <shuttle access token>,
       package_path: <path to your IPA or APK binary file>,
-      release_name: <release name displayed in shuttle>,
+      release_name: <release name displayed in Shuttle>,
       release_notes: <release notes>,
       base_url: "https://<your instance name>.shuttle.tools/")
 ```
@@ -32,8 +32,8 @@ url = shuttle(
 The action parameters `access_token` can be omitted when its value is [set as environment variables](https://docs.fastlane.tools/advanced/#environment-variables). Below a list of all available environment variables:
 
 - `SHUTTLE_ACCESS_TOKEN` - API Access Token for Shuttle API
-- `SHUTTLE_BASE_URL` - Shuttle instance URL (eg. https://<your instance name>.shuttle.tools/)
-- `SHUTTLE_RELEASE_NAME` - The name of the release (eg. MyApp v3)
+- `SHUTTLE_BASE_URL` - Shuttle instance URL (eg. `https://<your instance name>.shuttle.tools/`)
+- `SHUTTLE_RELEASE_NAME` - The name of the release (eg. `Sprint #14`)
 - `SHUTTLE_PACKAGE_PATH` - Build release path for android or ios build (if not provided, it'll check in shared values `GRADLE_APK_OUTPUT_PATH` or `IPA_OUTPUT_PATH`)
 - `SHUTTLE_ENV_ID` - The uniq ID of the app's environment you want to publish the build to (if not provided, it will try to guess it or ask to select/create it interactively then display the value so you can set it definitively)
 - `SHUTTLE_RELEASE_NOTES` - Release notes
