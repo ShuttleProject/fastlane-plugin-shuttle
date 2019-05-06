@@ -46,6 +46,7 @@ module Fastlane
           # builder.response :logger, Logger.new(STDOUT), bodies: true
           builder.headers["Authorization"] = "Bearer #{shuttle_instance.access_token}"
           builder.headers["Accept"] = "application/vnd.api+json"
+          builder.options.timeout = 120
           if is_multipart
             builder.request :multipart
           else
