@@ -49,7 +49,7 @@ module Fastlane
         return AppEnvironment.new(app, environment) if environment.package_id == package_info.id && app.platform_id == package_info.platform_id
           
         UI.important("App #{app.name} doesn't match the given build platform #{package_info.platform_id}, please check that #{env_id} is the correct environment ID.") unless app.platform_id == package_info.platform_id
-        UI.important("Environement #{environment.name} with ID #{env_id} doesn't match the build's package ID #{package_info.id}, please check that you set the correct environment ID") unless environment.package_id == package_info.id
+        UI.important("Environment #{environment.name} with ID #{env_id} doesn't match the build's package ID #{package_info.id}, please check that you set the correct environment ID") unless environment.package_id == package_info.id
         return nil
       end
 
