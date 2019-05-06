@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
-- Add a 2min timeout to avoid `Net::ReadTimeout` errors with last release of Shuttle.
+- Add a 2min timeout to avoid `Net::ReadTimeout` errors when uploading big releases.
 
 ## [0.1.0] - 2018-10-15
 ### Added
